@@ -1,6 +1,7 @@
 /*
 ad_gr_rkf78.c:
 Alex Deich's implementation of an RKF7(8) integrator.
+
 Now with arbitrary degrees of freedom for generalization beyond pendula.
 Date: March, 2019
 adeich2@illinois.edu
