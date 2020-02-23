@@ -14,13 +14,16 @@ def get_geodesic(filename,
                  return_data = False,
                  overwrite_header = False,
 		 statelist = None):
+    
     filename = filename.replace('~', homedir)
     config_file = config_file.replace('~', homedir)
     config = get_config(config_file)
     confint = config['INTEGRATION PARAMETERS']
+    
     # make sure everything is set up nicely
     path = confint['out_dir']
     path = path.replace('~', homedir)
+    
     if not header_check(path) or overwrite_header:
         print('Making header file from config file...', flush=True)
         make_header_file(path, config_file)
@@ -29,6 +32,7 @@ def get_geodesic(filename,
     else:
         print('Matching header file found...', flush=True)
     
+    # make sure there's a place for the data to go
     make_output_dir(path, config_file, statelist)
 
     tol = confint['tolerance']
