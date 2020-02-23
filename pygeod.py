@@ -10,7 +10,7 @@ The main function
 """
 def get_geodesic(filename,
                  init_state,
-                 config_file = 'config.ini',
+                 config_file,
                  return_data = False,
                  overwrite_header = False,
 		 statelist = None):
