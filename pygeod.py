@@ -1,6 +1,6 @@
 import configparser
 import os
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 
 homedir = os.path.expanduser('~')
