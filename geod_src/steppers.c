@@ -19,14 +19,19 @@ double oldh;
 _Bool is_near = 0;
 double dist1 = 100;
 int check_err(double tol){
+    //printf("check_err: ");
+    //print_vec(integration_vectors.err_vec);
+    //printf("%f\n", tol);
     int good_err = 1;
     for(int i = 0; i < 6; i++){
         if(gsl_vector_get(integration_vectors.err_vec, i) > tol){
+            //printf("%f\n", gsl_vector_get(integration_vectors.err_vec, i));
             good_err = 0;
         }
     }
     return good_err;
 }
+double hinit;
 double h_rec = 999.;
 int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 	     int dof,
@@ -36,6 +41,7 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 	     double h,
 	     double xmax,
 	     double tolerance){
+    hinit = h;
     double err;
     double scale;
     int step = 0;
@@ -76,9 +82,7 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
         oldh = h;
         if (make_section){
             h = poincare_check2(cur_state, h);
-            // testing to see if the timestep is being updated when
-            // the particle is close to the surface
-            //if (h!=h_rec) printf("%f\n",h);h_rec = h;
+            if (h!=h_rec) printf("%f\n",h);h_rec = h;
             if (poincare_yes){
                 add_to_history = 1;
                 }
@@ -87,8 +91,16 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 
         if(add_to_history){
            populate_history(dof, lines_written, x, cur_state);
-            populate_history(dof, lines_written, x, integration_vectors.prev_state);
-            poincare_yes = 0;
+           //printf("%f\n",x);
+           //print_vec(cur_state);
+           // this is fucking up the order of things in the history array
+            if (x == 0. || !make_section){
+                populate_history(dof, lines_written, x, cur_state);
+            }
+            else {
+                populate_history(dof, lines_written, x, integration_vectors.prev_state);
+                poincare_yes = 0;
+            }
             lines_written++;
             if(make_section){
                 add_to_history = 0;
@@ -163,26 +175,33 @@ double poincare_check2(gsl_vector * state, double h){
 
 
     // it's getting close and is going the correct direction
-    if (dist2  < (poincare_tolerance * 10) && (Pth / poincare_condition[1]) > 0 && is_near == 0){
+    if (dist2  < (poincare_tolerance * SLOWDOWN_DIST) && (Pth / poincare_condition[1]) > 0 && is_near == 0){
         h /= HIRES_SCALE_FACTOR;
         is_near = 1;
     }
+    else if (dist2  > (poincare_tolerance * SLOWDOWN_DIST)){
+        is_near = 0;
+        h = hinit;
+        }
     // now it's within tolerance and going the correct direction
     if (dist2 < poincare_tolerance && (Pth / poincare_condition[1]) > 0){
         // while the particle is getting closer to the plane, update the prev_state vector
         if (dist2 < dist1){
             is_it_closer = 1;
             gsl_vector_memcpy(integration_vectors.prev_state, state);
+            //printf("orbit %d:\n",orbit_num);
+            //printf("  %f\n",dist1);
+            //printf("  %f\n\n",dist2);
             dist1 = dist2;
         }
         // now that it's closest approach was the previous timestep, allow the state to be printed
         else if (dist2 > dist1 && poincare_yes == 0 && rdist > (r * h * 100)){
+            //printf("%d\n",orbit_num);
             is_it_closer = 0;
             poincare_yes = 1;
-            is_near = 0;
             // return the timestep to the size it was before it approached the surface
             dist1 = 100;
-            h *= HIRES_SCALE_FACTOR;
+            h = hinit;
             orbit_num += 1.;
      }
     }
