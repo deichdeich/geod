@@ -82,7 +82,7 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
         oldh = h;
         if (make_section){
             h = poincare_check2(cur_state, h);
-            if (h!=h_rec) printf("%f\n",h);h_rec = h;
+            //if (h!=h_rec) printf("%f\n",h);h_rec = h;
             if (poincare_yes){
                 add_to_history = 1;
                 }

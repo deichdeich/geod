@@ -31,8 +31,8 @@ int (*f) (double, gsl_vector *, gsl_vector *);
 #define ATTEMPTS 10
 #define MIN_SCALE_FACTOR 0.125
 #define MAX_SCALE_FACTOR 4.
-#define HIRES_SCALE_FACTOR 100
-#define SLOWDOWN_DIST 10
+#define HIRES_SCALE_FACTOR 200
+#define SLOWDOWN_DIST 2
 
 #define hist_len 1000
 #define GRAVITY 9.8
