@@ -17,7 +17,6 @@ int populate_history(int dof, int step, double clock, gsl_vector * state);
 void write_history(int step);
 int arr2vec(int len, double in_arr[len], gsl_vector * out_vec);
 void print_vec(gsl_vector * vec);
-void poincare_check(gsl_vector * state);
 gsl_vector * cur_state;
 double (*int_func)(int (*f) (double, gsl_vector *, gsl_vector *),
                           int dof,
@@ -32,9 +31,11 @@ int (*f) (double, gsl_vector *, gsl_vector *);
 #define ATTEMPTS 10
 #define MIN_SCALE_FACTOR 0.125
 #define MAX_SCALE_FACTOR 4.
+#define HIRES_SCALE_FACTOR 10
 
 #define hist_len 1000
 #define GRAVITY 9.8
+#define TPI 6.283185307179586
 
 void get_eom(char eom_name[]);
 int make_section;

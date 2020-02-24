@@ -13,7 +13,8 @@ def get_geodesic(filename,
                  config_file,
                  return_data = False,
                  overwrite_header = False,
-		 statelist = None):
+		 statelist = None,
+                 printcmd = False):
     
     filename = filename.replace('~', homedir)
     config_file = config_file.replace('~', homedir)
@@ -48,6 +49,7 @@ def get_geodesic(filename,
     for thing in init_state:
         syscmd += f"{thing} "
     syscmd += f"{config['PHYSICAL PARAMETERS']['jz']} {path}/{filename}"
+    if printcmd: print(syscmd)
     # run the command
     print("\nRunning integration...", flush = True)
     os.system(syscmd)

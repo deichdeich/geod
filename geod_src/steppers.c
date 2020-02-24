@@ -15,21 +15,19 @@
 #include "fileio.h"
 #include "definitions.h"
 
-
+double oldh;
+_Bool is_near = 0;
+double dist1 = 100;
 int check_err(double tol){
-    //printf("check_err: ");
-    //print_vec(integration_vectors.err_vec);
-    //printf("%f\n", tol);
     int good_err = 1;
     for(int i = 0; i < 6; i++){
         if(gsl_vector_get(integration_vectors.err_vec, i) > tol){
-            //printf("%f\n", gsl_vector_get(integration_vectors.err_vec, i));
             good_err = 0;
         }
     }
     return good_err;
 }
-
+double h_rec = 999.;
 int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 	     int dof,
 	     gsl_vector * in_state_vec,
@@ -41,11 +39,11 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
     double err;
     double scale;
     int step = 0;
-
     cur_state = gsl_vector_calloc(dof);
     gsl_vector_memcpy(integration_vectors.temp_in_vec, in_state_vec);
     gsl_vector_memcpy(integration_vectors.temp_out_vec, out_state_vec);
     gsl_vector_memcpy(cur_state, in_state_vec);
+    h_rec = h;
     while (x < xmax+h){
         int attempts = 0;
         int err_val = 0;
@@ -75,9 +73,12 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
                 }
             
         }
-
+        oldh = h;
         if (make_section){
-            poincare_check(cur_state);
+            h = poincare_check2(cur_state, h);
+            // testing to see if the timestep is being updated when
+            // the particle is close to the surface
+            //if (h!=h_rec) printf("%f\n",h);h_rec = h;
             if (poincare_yes){
                 add_to_history = 1;
                 }
@@ -85,7 +86,9 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 
 
         if(add_to_history){
-            populate_history(dof, lines_written, x, cur_state);
+           populate_history(dof, lines_written, x, cur_state);
+            populate_history(dof, lines_written, x, integration_vectors.prev_state);
+            poincare_yes = 0;
             lines_written++;
             if(make_section){
                 add_to_history = 0;
@@ -133,143 +136,73 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 //
 /////////////////////
 
+/* if the particle is near (10x tol), then:
+ *      -slow down timestep by some factor (start with 10)
+ *      if the particle is close (within tol), then:
+ *          -start keeping track of how close it's getting
+ *          -as soon as the distance from the surface increases,
+ *          take the previous state vector.
+ *
+ *
+ */
+int orbit_num = 0;
+_Bool is_it_closer = 0;
+double poincare_check2(gsl_vector * state, double h){
+    double r, prev_r, th, Pth;
+    
+    prev_r = gsl_vector_get(integration_vectors.prev_state, 0);
+    r = gsl_vector_get(state, 0);
 
-int stepper(int (*f) (double, gsl_vector *, gsl_vector *),
-	     int dof,
-	     gsl_vector * in_state_vec,
-	     gsl_vector * out_state_vec,
-	     double x,
-	     double h,
-	     double xmax,
-	     double *h_next,
-	     double tolerance)
-{
+    th = gsl_vector_get(state, 2);
+    Pth = gsl_vector_get(state, 3);
+    
+    // the distance of the particle from the surface
+    double dist2 = fmod(fabs(th - poincare_condition[0]),TPI);
+    
+    double rdist = fabs(r-prev_r);
 
 
-    integration_vector_init(dof);
-    const double err_exponent = 1.0 / 7.0;
-
-    double scale;
-    double err;
-    double yy;
-    int i;
-    int last_interval = 0;
-
-    // Verify that the step size is positive and that the upper endpoint //
-    // of integration is greater than the initial enpoint.               //
-
-    if (xmax < x || h <= 0.0)
-	return -2;
-
-    // If the upper endpoint of the independent variable agrees with the //
-    // initial value of the independent variable.  Set the value of the  //
-    // dependent variable and return success.                            //
-
-    *h_next = h;
-    gsl_vector_memcpy(out_state_vec, in_state_vec);
-    if (xmax == x)
-	return 0;
-
-    // ensure that the step size h is not larger than the length of the //
-    // integration interval.                                            //
-
-    if (h > (xmax - x)) {
-	h = xmax - x;
-	last_interval = 1;
+    // it's getting close and is going the correct direction
+    if (dist2  < (poincare_tolerance * 10) && (Pth / poincare_condition[1]) > 0 && is_near == 0){
+        h /= HIRES_SCALE_FACTOR;
+        is_near = 1;
     }
-    // Redefine the error tolerance to an error tolerance per unit    //
-    // length of the integration interval.                            //
-
-    tolerance /= (xmax - x);
-
-    // Integrate the diff eq y'=f(x,y) from x=x to x=xmax trying to  //
-    // maintain an error less than tolerance * (xmax-x) using an     //
-    // initial step size of h and initial value: y = y[0]            //
-
-    gsl_vector_memcpy(integration_vectors.temp_in_vec, in_state_vec);
-    int foo = 0;
-    while (x < xmax) {
-        //printf("%f, %f\n",x, xmax);
-	    scale = 1.0;
-	    i = 0;
-        for (i = 0; i < ATTEMPTS; i++) {
-            err = fabs(single_stepRKF78(f,
-                        dof,
-                        integration_vectors.temp_in_vec,
-                        integration_vectors.temp_out_vec,
-                        x, h));
-            printf("%0.10f, %0.10f, %0.10f, %0.10f, %0.10f\n\n", err, tolerance, h, x, xmax);
-        
-            if (err == 0.0) {
-                scale = MAX_SCALE_FACTOR;
-                break;
-            }
-
-            double statenorm = gsl_blas_dnrm2(integration_vectors.temp_in_vec);
-            yy = (statenorm == 0.0) ? tolerance : statenorm;
-            scale = 0.8 * pow(tolerance * yy / err, err_exponent);
-            scale = min(max(scale, MIN_SCALE_FACTOR), MAX_SCALE_FACTOR);
-
-            if (err < (tolerance * yy)){
-                break;
-                }
-            h *= scale;
-
-            if (x + h > xmax){
-                h = xmax - x;
-                }
-            
-            else if (x + h + 0.5 * h > xmax){
-                h = 0.5 * h;
-                }
-            }
-        
-        if (make_section){
-            poincare_check(integration_vectors.temp_out_vec);
-            if (poincare_yes){
-                add_to_history = 1;
-                }
-            }
-
-        //add_to_file(dof, x, integration_vectors.temp_out_vec);
-
-        if (add_to_history){
-	        
-	        if(make_section){
-	            add_to_history = 0;
-	            poincare_yes = 0;
-	        }
-	    }
-
-        if (i >= ATTEMPTS) {
-            *h_next = h * scale;
-            return -1;
+    // now it's within tolerance and going the correct direction
+    if (dist2 < poincare_tolerance && (Pth / poincare_condition[1]) > 0){
+        // while the particle is getting closer to the plane, update the prev_state vector
+        if (dist2 < dist1){
+            is_it_closer = 1;
+            gsl_vector_memcpy(integration_vectors.prev_state, state);
+            dist1 = dist2;
         }
-        
-        gsl_vector_memcpy(integration_vectors.temp_in_vec,
-                  integration_vectors.temp_out_vec);
-        x += h;
-        printf("%f\n", x);
-        h *= scale;
-        *h_next = h;
-
-        if (last_interval) {
-            printf("last interval\n");
-            break;
-        }
-
-        if (x + h > xmax) {
-            last_interval = 1;
-            h = xmax - x;
-        }
-
-        else if (x + h + 0.5 * h > xmax)
-            h = 0.5 * h;
-    foo++;
+        // now that it's closest approach was the previous timestep, allow the state to be printed
+        else if (dist2 > dist1 && poincare_yes == 0 && rdist > (r * h * 100)){
+            is_it_closer = 0;
+            poincare_yes = 1;
+            is_near = 0;
+            // return the timestep to the size it was before it approached the surface
+            dist1 = 100;
+            h *= HIRES_SCALE_FACTOR;
+            orbit_num += 1.;
+     }
     }
-    //printf("blah");
-
-    gsl_vector_memcpy(out_state_vec, integration_vectors.temp_out_vec);
-    integration_vector_free();
-    return 0;
+    return h;
 }
+
+
+void poincare_check(gsl_vector * state){
+    double r, th, Pth;
+    r = gsl_vector_get(state, 0);
+    th = gsl_vector_get(state, 2);
+    Pth = gsl_vector_get(state, 3);
+
+    /* the first if checks to see if Th1 is within the tolerance of the desired Th1 */
+    if (fmod(fabs(th - poincare_condition[0]), TPI) < poincare_tolerance )  {
+        /* the second checks to see if Th1_d and the desired Th1_d are on the 
+        same side of 0 */
+        if ((Pth / poincare_condition[1]) > 0){
+            poincare_yes = 1;
+        }
+    }
+}
+

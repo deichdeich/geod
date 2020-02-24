@@ -25,9 +25,7 @@ adeich2@illinois.edu
 _Bool add_to_history = 1.;
 _Bool poincare_yes = 0.;
 int lines_written = 0;
-/* Why doesn't C have built-in max, min functions? */
 
-double TPI = 6.283185307179586;
 
 /* poincare section flags and condition */
 
@@ -198,23 +196,6 @@ int populate_history(int dof,
     return 0;
 }
 
-
-void poincare_check(gsl_vector * state){
-    double r, th, Pth;
-    r = gsl_vector_get(state, 0);
-    th = gsl_vector_get(state, 2);
-    Pth = gsl_vector_get(state, 3);
-
-    /* the first if checks to see if Th1 is within the tolerance of the desired Th1 */
-    if (fmod(fabs(th - poincare_condition[0]), TPI) < poincare_tolerance )  {
-        /* the second checks to see if Th1_d and the desired Th1_d are on the 
-        same side of 0 */
-        if ((Pth / poincare_condition[1]) > 0){
-            poincare_yes = 1;
-        }
-    }
-}
-
 /////////////////
 // arr2vec converts a regular ol' array to a gsl_vector
 //
@@ -270,54 +251,3 @@ int main(int argc, char *argv[])
 
 return 0.;
 }
-/*
-int main(int argc, char *argv[])
-{
-    //double test_vec[6] = {91.08497395,0.,1.04719755,0., 0.,3.3};
-    double t0 = 0.;
-    double t1 = atof(argv[1]);
-    int dof = 6.;
-    double tol = 1e-10;
-    double h = 1e-1;
-    double ipc[2] = {1.5707963268, 1.};
-    double ipt = 1e-2;
-    
-    // initial state
-    MASS = atof(argv[2]);
-    //printf("%f\n", MASS);
-    SPIN = atof(argv[3]);
-    //printf("%f\n", SPIN);
-    Ee = atof(argv[4]);
-    //printf("%f\n", Ee);
-    double test_vec[6] = {atof(argv[5]),
-                          atof(argv[6]),
-                          atof(argv[7]),
-                          atof(argv[8]),
-                          atof(argv[9]),
-                          atof(argv[10])};
-
-    Jz = atof(argv[10]);
-    
-    double zeta = atof(argv[11]);
-    double xsi = atof(argv[12]);
-    
-    char *ifn = argv[13];
-    char *integrator = "rkf78";
-    _Bool ims = atoi(argv[14]);
-
-    
-    rkf78(kerr_eom_exact,
-          t0,
-          t1,
-          dof,
-          test_vec,
-          tol,
-          h,
-          ims,
-          ipc,
-          ipt,
-          ifn,
-          integrator);
-
-    return 0;
-}*/

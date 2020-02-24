@@ -107,5 +107,6 @@
     gsl_vector *temp_in_vec;
     gsl_vector *temp_out_vec;
     gsl_vector *zero_vec;
-
+    
+    gsl_vector *prev_state;
 } integration_vectors;

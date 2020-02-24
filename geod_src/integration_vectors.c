@@ -47,7 +47,9 @@ void integration_vector_zero(int dof)
     Nelt = sizeof(integration_vectors) / sizeof(integration_vectors.k1_in);	// number of elements in x.
 
     p = &integration_vectors.k1_in;
-    for (i = 0; i < Nelt; i++, p++) {
+    // keep it to Nelt - 1 because we don't want to overwrite the prev_state
+    // vector which is used for poincare map calculations
+    for (i = 0; i < Nelt - 1; i++, p++) {
         for (j = 0; j < dof; j++){
 	        gsl_vector_set(*p, j, 0);
 	    }
