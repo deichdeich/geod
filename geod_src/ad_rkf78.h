@@ -23,7 +23,9 @@ double (*int_func)(int (*f) (double, gsl_vector *, gsl_vector *),
                           gsl_vector * in_vec,
                           gsl_vector * out_vec,
                           double x0,
-                          double h);
+                          double h,
+                          int check);
+
 int (*f) (double, gsl_vector *, gsl_vector *);
 #define max(x,y) ( (x) < (y) ? (y) : (x) )
 #define min(x,y) ( (x) < (y) ? (x) : (y) )
@@ -31,8 +33,8 @@ int (*f) (double, gsl_vector *, gsl_vector *);
 #define ATTEMPTS 10
 #define MIN_SCALE_FACTOR 0.125
 #define MAX_SCALE_FACTOR 4.
-#define HIRES_SCALE_FACTOR 200
-#define SLOWDOWN_DIST 2
+#define HIRES_SCALE_FACTOR 1000
+#define SLOWDOWN_DIST 200
 
 #define hist_len 1000
 #define GRAVITY 9.8

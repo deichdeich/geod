@@ -190,7 +190,9 @@ int populate_history(int dof,
     for (int i = 1; i < dof+1; i++) {
 	    history[line][i] = gsl_vector_get(state, i - 1);
     }
+    //printf("line %d\n", line);
     if(line == (hist_len-1)){
+        //printf("calling it...\n");
         write_history(line);
     }
     return 0;

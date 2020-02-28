@@ -19,8 +19,10 @@
 void write_history(int step){
     int line;
     FILE *outfile = fopen(filename, "ab");
-    for(line = 0; line < step; line++){
+    for(line = 0; line <= step; line++){
         fwrite(history[line], sizeof(history[line][0]), 7, outfile);
+        //printf("\t printing line %d\n", line);
+
     }
     fclose(outfile);
 }

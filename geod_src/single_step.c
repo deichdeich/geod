@@ -116,7 +116,13 @@ double single_stepRK4(int (*f) (double, gsl_vector *, gsl_vector *),
                           gsl_vector * in_vec,
                           gsl_vector * out_vec,
                           double x0,
-                          double h){
+                          double h,
+                          int check){
+     if(check ==1){
+     print_vec(in_vec);
+     print_vec(out_vec);
+     }
+
     const double c_1_11 = 41.0 / 840.0;
     const double c6 = 34.0 / 105.0;
     const double c_7_8 = 9.0 / 35.0;
@@ -196,12 +202,14 @@ double single_stepRK4(int (*f) (double, gsl_vector *, gsl_vector *),
     //print_vec(in_vec);
     //printf("\t integration_vectors.k1_in:");
     //print_vec(integration_vectors.k1_in);
-    //printf("\t integration_vectors.k1_out:");
-    //print_vec(integration_vectors.k1_out);
+    if(check ==1){
+    printf("\t integration_vectors.k1_out:");
+    print_vec(integration_vectors.k1_out);
+ }
     gsl_vector_memcpy(integration_vectors.k1_in, in_vec);
     (*f) (x0, integration_vectors.k1_in, integration_vectors.k1_out);
     //printf("\t integration_vectors.k1_out:");
-    //print_vec(integration_vectors.k1_out);
+    if(check==1) print_vec(integration_vectors.k1_out);
 
     //////////////
     // k2
@@ -538,7 +546,7 @@ double single_stepRK4(int (*f) (double, gsl_vector *, gsl_vector *),
     gsl_blas_dscal(h, integration_vectors.c_tot_vec);
     gsl_vector_add(integration_vectors.c_tot_vec, in_vec);
     gsl_vector_memcpy(out_vec, integration_vectors.c_tot_vec);
-
+    if(check==1) print_vec(out_vec);
     //////////////
     // err_factor
     /////////////
