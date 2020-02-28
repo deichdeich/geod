@@ -345,7 +345,9 @@ void poincare_check(gsl_vector * state){
         /* the second checks to see if Th1_d and the desired Th1_d are on the 
         same side of 0 */
         if ((Pth / poincare_condition[1]) > 0){
-            poincare_yes = 1;
+            if (r < RCOND){
+                poincare_yes = 1;
+            }
         }
     }
 }
