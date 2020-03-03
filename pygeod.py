@@ -101,6 +101,8 @@ def make_header_file(path, config_file = 'config.ini'):
     for key in confpp:
         header_file.write('#define {confkey: <16} {value}\n'.format(confkey = key.upper(),
                                                                     value = confpp[key]))
+    header_file.write('#define {confkey: <16} {value}\n'.format(confkey = 'RCOND',
+                                                                value = config['INTEGRATION PARAMETERS']['RCOND']))
     header_file.close()
     return 0    
 
