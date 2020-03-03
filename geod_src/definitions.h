@@ -1,4 +1,4 @@
-//data/test
+//../scratch/z2_wp3
 #define EOM              edgb_o2
 #define MASS             1.
 #define SPIN             0.

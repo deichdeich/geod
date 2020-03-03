@@ -23,7 +23,8 @@ int check_err(double tol){
     //print_vec(integration_vectors.err_vec);
     //printf("%f\n", tol);
     int good_err = 1;
-    for(int i = 0; i < 6; i++){
+    int i;
+    for(i = 0; i < 6; i++){
         if(gsl_vector_get(integration_vectors.err_vec, i) > tol){
             //printf("%f\n", gsl_vector_get(integration_vectors.err_vec, i));
             good_err = 0;
@@ -345,9 +346,7 @@ void poincare_check(gsl_vector * state){
         /* the second checks to see if Th1_d and the desired Th1_d are on the 
         same side of 0 */
         if ((Pth / poincare_condition[1]) > 0){
-            if (r < RCOND){
                 poincare_yes = 1;
-            }
         }
     }
 }
