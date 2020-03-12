@@ -71,7 +71,8 @@ int rkf78(double xmin,
         int_func = single_stepRKF78;
     }
     else if(strcmp("rk4", integrator) == 0){
-        int_func = single_stepRK4;
+        //int_func = single_stepRK4;
+        printf("RK4 integration disabled at the moment\n");
     }
     else{
         printf("Bad integrator specification: %s\n  Options: rk4, rkf78\n", integrator);
@@ -156,8 +157,9 @@ int *vect_add(gsl_vector * sum, int vect_len, int count, ...)
 //////////////////////
 void print_vec(gsl_vector * vec)
 {
+    int i;
     printf("[");
-    for (int i = 0; i < 6; i++) {
+    for (i = 0; i < 6; i++) {
         printf("%0.10e ",gsl_vector_get(vec, i));
     }
     printf("\b]\n");
@@ -187,7 +189,8 @@ int populate_history(int dof,
                      gsl_vector * state){
     int line = step % hist_len;
     history[line][0] = clock;
-    for (int i = 1; i < dof+1; i++) {
+    int i;
+    for (i = 1; i < dof+1; i++) {
 	    history[line][i] = gsl_vector_get(state, i - 1);
     }
     //printf("line %d\n", line);
@@ -212,7 +215,8 @@ int populate_history(int dof,
 ////////////////
 int arr2vec(int len, double in_arr[len], gsl_vector * out_vec)
 {
-    for (int i = 0; i < len; i++) {
+    int i;
+    for (i = 0; i < len; i++) {
 	    gsl_vector_set(out_vec, i, in_arr[i]);
     }
     return 0;
