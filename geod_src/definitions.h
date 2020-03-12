@@ -1,7 +1,10 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 //data/test
 #define EOM              edgb_o1SR
 =======
+=======
+>>>>>>> a0bebb6df34fcafd49ad7c008606b6609037adcb
 //../scratch/z2_wp3
 #define EOM              edgb_o2
 >>>>>>> a0bebb6df34fcafd49ad7c008606b6609037adcb
