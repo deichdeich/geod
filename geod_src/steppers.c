@@ -346,15 +346,10 @@ void poincare_check(gsl_vector * state){
         /* the second checks to see if Th1_d and the desired Th1_d are on the 
         same side of 0 */
         if ((Pth / poincare_condition[1]) > 0){
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (r < 10){
-=======
->>>>>>> a0bebb6df34fcafd49ad7c008606b6609037adcb
-=======
->>>>>>> a0bebb6df34fcafd49ad7c008606b6609037adcb
                 poincare_yes = 1;
         }
     }
+}
 }
 
