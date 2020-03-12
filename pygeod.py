@@ -46,7 +46,7 @@ def get_geodesic(filename,
     
     # making the command
     syscmd = f"geod_src/geod {t0} {tmax} {h} {pointol} {make_section} "
-    for thing in init_state:
+    for thing in init_state[:5]:
         syscmd += f"{thing} "
     syscmd += f"{config['PHYSICAL PARAMETERS']['jz']} {path}/{filename}"
     if printcmd: print(syscmd)
@@ -87,7 +87,7 @@ def plot_traj(data, ax = False, **kwargs):
 def get_arr_from_bin(fname):
     outdat = np.fromfile(fname)
     outdat = outdat.reshape(int(len(outdat)/7), 7)
-    return(outdat)
+    return(outdat[1:])
 
 
 """
