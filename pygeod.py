@@ -2,6 +2,8 @@ import configparser
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from geodlib import datatools
+
 
 homedir = os.path.expanduser('~')
 
@@ -56,7 +58,7 @@ def get_geodesic(filename,
     
     data = 0
     if return_data:
-        data = get_arr_from_bin(f'{path}/{filename}')
+        data = datatools.get_arr_from_bin(f'{path}/{filename}')
         
     return(data)
 
@@ -83,11 +85,6 @@ def plot_traj(data, ax = False, **kwargs):
     ax.set_ylim(-bl,bl)
     return(ax)
 
-
-def get_arr_from_bin(fname):
-    outdat = np.fromfile(fname)
-    outdat = outdat.reshape(int(len(outdat)/7), 7)
-    return(outdat[1:])
 
 
 """

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import pygeod
+from geodlib import datatools
 from scipy import interpolate
 
 """
@@ -33,7 +33,7 @@ def get_area_dict(dcty):
     for i in os.listdir(dcty):
         print(f' {i}          ',flush=True, end='\r')
         if i.endswith('bin'):
-            data = pygeod.get_arr_from_bin(i)
+            data = datatools.get_arr_from_bin(i)
             area_dict[i] = get_area_of_sect(i)
     return(area_dict)
 
@@ -43,7 +43,7 @@ def make_big_array(dcty):
     for i in os.listdir(dcty):
         print(f' {i}          ',flush=True, end='\r')
         if i.endswith('bin'):
-            data = pygeod.get_arr_from_bin(f'{dcty}/'+i)
+            data = datatools.get_arr_from_bin(f'{dcty}/'+i)
             length += len(data)
 
     big_arr = np.zeros((length, 3))
@@ -127,13 +127,6 @@ def rad_finder(rads):
 """
 Misc.
 """
-def data_generator(dcty, ending = 'bin'):
-    for i in os.listdir(dcty):
-        if i.endswith(ending):
-            data = pygeod.get_arr_from_bin(dcty+'/'+i)
-            if len(data) > 10:
-                yield (i, data)
-
 def unit_vector(vector):
     norm = np.linalg.norm(vector, axis=1)
     newvec = np.copy(vector)
@@ -196,7 +189,7 @@ def make_combo_plot(dcty,
         fig, (poinplot, rotplot) = plt.subplots(2,1,sharex=True)
         fig.subplots_adjust(hspace=0)
     
-    datas = data_generator(dcty)
+    datas = datatools.data_generator(dcty)
     
     curve_list = []
     
