@@ -5,7 +5,7 @@ geodesic integration for chaos searches
 This is a collection of code made to perform numerical integration and then do analysis of that data.
 
 The integrator is written in C and can be found in geod_src.
-It is designed to integrate trajectories in arbitrary 6-dimensional phase spaces, and is highly modular,
+It is designed to integrate trajectories in phase spaces of arbitrary dimensionality, and is highly modular,
 so that adding a new equation of motion just means adding one more C source file.
 
 It was written at UIUC in order to do very high-resolution integrations of geodesics to look for chaos
