@@ -21,7 +21,7 @@ void get_eom(char eom_name[]){
     else if(strcmp("kerr_eom_SR_o2", eom_name) == 0){
         f = kerr_eom_SR_o2;
     }
-    else if(strcmp("edgb_o2", eom_name) == 0){
-        f = edgb_o2;
+    else if(strcmp("edgb_a2_z1", eom_name) == 0){
+        f = edgb_a2_z1;
     }
 }

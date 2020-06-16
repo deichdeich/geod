@@ -10,9 +10,9 @@ int stepper2(int (*f) (double, gsl_vector *, gsl_vector *),
 	     double h,
 	     double xmax,
 	     double tolerance);
-int check_err(double tol);
+int check_err(double tol, int verbose);
 void poincare_check(gsl_vector * state);
 double poincare_check2(gsl_vector * state, double h);
-void poincare_check_bisect(int (*f) (double, gsl_vector *, gsl_vector *), gsl_vector *state, double h, int dof);
-void bisect(int (*f) (double, gsl_vector *, gsl_vector *), double prev_dist, double h, gsl_vector *bisect_out, int dof);
+double poincare_check_bisect(int (*f) (double, gsl_vector *, gsl_vector *), gsl_vector *state, double h, int dof, double x);
+double bisect(int (*f) (double, gsl_vector *, gsl_vector *), double prev_dist, double h, gsl_vector *bisect_out, int dof, double x);
 double dist1;

@@ -33,22 +33,31 @@
     gsl_vector *k3k2_out;
 
     gsl_vector *k4k1_out;
+    gsl_vector *k4k2_out;
     gsl_vector *k4k3_out;
 
     gsl_vector *k5k1_out;
+    gsl_vector *k5k2_out;
     gsl_vector *k5k3_out;
     gsl_vector *k5k4_out;
 
     gsl_vector *k6k1_out;
+    gsl_vector *k6k2_out;
+    gsl_vector *k6k3_out;
     gsl_vector *k6k4_out;
     gsl_vector *k6k5_out;
 
     gsl_vector *k7k1_out;
+    gsl_vector *k7k2_out;
+    gsl_vector *k7k3_out;
     gsl_vector *k7k4_out;
     gsl_vector *k7k5_out;
     gsl_vector *k7k6_out;
 
     gsl_vector *k8k1_out;
+    gsl_vector *k8k2_out;
+    gsl_vector *k8k3_out;
+    gsl_vector *k8k4_out;
     gsl_vector *k8k5_out;
     gsl_vector *k8k6_out;
     gsl_vector *k8k7_out;
@@ -78,6 +87,10 @@
     gsl_vector *k11k10_out;
 
     gsl_vector *k12k1_out;
+    gsl_vector *k12k2_out;
+    gsl_vector *k12k3_out;
+    gsl_vector *k12k4_out;
+    gsl_vector *k12k5_out;
     gsl_vector *k12k6_out;
     gsl_vector *k12k7_out;
     gsl_vector *k12k8_out;
@@ -85,6 +98,8 @@
     gsl_vector *k12k10_out;
 
     gsl_vector *k13k1_out;
+    gsl_vector *k13k2_out;
+    gsl_vector *k13k3_out;
     gsl_vector *k13k4_out;
     gsl_vector *k13k5_out;
     gsl_vector *k13k6_out;

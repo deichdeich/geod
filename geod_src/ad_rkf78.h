@@ -36,8 +36,9 @@ int (*f) (double, gsl_vector *, gsl_vector *);
 #define HIRES_SCALE_FACTOR 1000
 #define SLOWDOWN_DIST 200
 
-#define hist_len 100
+#define hist_len 1000
 #define GRAVITY 9.8
+#define PI 3.14159265358979324
 #define TPI 6.283185307179586
 
 void get_eom(char eom_name[]);

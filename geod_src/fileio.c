@@ -15,13 +15,23 @@
 #include "fileio.h"
 #include "definitions.h"
 
+void clear_history();
+
+void clear_history(){
+    int i, line;
+    for(i = 0; i < 7; i++){
+        for(line = 0; line < hist_len; line++){
+            history[line][i] = 7.;
+        }
+    }
+}
 
 void write_history(int step){
     int line;
     FILE *outfile = fopen(filename, "ab");
     for(line = 0; line <= step; line++){
         fwrite(history[line], sizeof(history[line][0]), 7, outfile);
-        //printf("\t printing line %d\n", line);
+        //printf("\t printed line %f\n", history[line][0]);
 
     }
     fclose(outfile);

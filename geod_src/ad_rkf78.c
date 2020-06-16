@@ -70,6 +70,9 @@ int rkf78(double xmin,
     if(strcmp("rkf78", integrator) == 0){
         int_func = single_stepRKF78;
     }
+    else if(strcmp("rkv65", integrator) == 0){
+        int_func = single_stepRKV65;
+    }
     else if(strcmp("rk4", integrator) == 0){
         //int_func = single_stepRK4;
         printf("RK4 integration disabled at the moment\n");
@@ -91,7 +94,7 @@ int rkf78(double xmin,
     poincare_tolerance = init_poincare_tolerance;
     
     if(make_section){
-        add_to_history = 0;
+        add_to_history = 1;
     }
     /* initialize initial state */
     gsl_vector *init_state_vec = gsl_vector_calloc(dof);
@@ -183,6 +186,8 @@ void print_vec(gsl_vector * vec)
 //      0 if successful
 //      No failure case yet.
 ///////////////////
+
+double lastclock = INFINITY;
 int populate_history(int dof,
                      int step,
                      double clock,
@@ -190,6 +195,10 @@ int populate_history(int dof,
     int line = step % hist_len;
     history[line][0] = clock;
     int i;
+   // printf("%f: populate_history : ", clock);
+   // print_vec(state);
+    //printf("");
+    lastclock = clock;
     for (i = 1; i < dof+1; i++) {
 	    history[line][i] = gsl_vector_get(state, i - 1);
     }
@@ -227,11 +236,12 @@ int arr2vec(int len, double in_arr[len], gsl_vector * out_vec)
 // ./ad_gr_rkf78_wtf.e 0. 1e5 1e-10 1e-1 blah/out_ms.bin
 //command line syntax: ./ad_gr_rkf78_wtf.c end_time mass spin energy r pr th pth ph Jz filename
 // argc = 11
+clear_history();
 int main(int argc, char *argv[])
 {
 	double t0 = atof(argv[1]);
 	double t1 = atof(argv[2]);
-	double tol = 1e-10;
+	double tol = 1e-15;
 	double h = atof(argv[3]);
 	double ipc[2] = {1.5707963268, 1.};
 	double ipt = atof(argv[4]);
@@ -253,7 +263,7 @@ int main(int argc, char *argv[])
           ipc,
           ipt,
           ifn,
-          "rkf78");
+          "rkv65");
 
 return 0.;
 }

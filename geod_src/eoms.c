@@ -24,26 +24,74 @@
 /////////  o Coordinates with roman letters are written as the lower-case
 /////////    version of that letter
 /////////    Ex: the radial coordinate is written as "r"
-/////////  o Coordinates with grENERGYk letters are written as the two-letter abbreviation
+/////////  o Coordinates with greek letters are written as the two-letter abbreviation
 /////////    with the first letter capitalized.
-/////////    Ex: theta becomes "Th", phi becomes "Ph".
+/////////    Ex: theta becomes "Th", Ph becomes "Ph".
 /////////
 /////////  Momenta and time derivatives
 /////////  o Momenta are written by prepending "P_" to the beginning of the coordinate.
-/////////    Ex: The phi momentum becomes "P_Ph"
+/////////    Ex: The Ph momentum becomes "P_Ph"
 /////////  o Time derivatives are written by appending "_d" to the end of the momentum
 /////////    or coordinate
 /////////    Ex: The time derivative of the r coordinate becomes "r_d",
-/////////        the time derivative of the phi momentum becomes "P_Ph_d"
+/////////        the time derivative of the Ph momentum becomes "P_Ph_d"
 ///////// 
 /////////  Coupling parameters
-/////////  o Coupling/expansion parameters are written as the name of their full grENERGYk
+/////////  o Coupling/expansion parameters are written as the name of their full greek
 /////////    letter, with appropriate capitalization
 /////////
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
 
+int double_pendulum(double t, gsl_vector * in_state, gsl_vector * out_state){
+    double Th1, Th1_d, Th2, Th2_d;
+    Th1 = gsl_vector_get(in_state, 0);
+    Th1_d = gsl_vector_get(in_state, 1);
+    Th2 = gsl_vector_get(in_state, 2);
+    Th2_d = gsl_vector_get(in_state, 3);
 
+    double a1, a2, a3, a4, Th1_dd;
+    double b1, b2, b3, b4, Th2_dd;
+
+    a1 = GRAVITY * (sin(Th2) * cos(Th1 - Th2) - 2 * sin(Th1));
+    a2 = -(Th2_d * Th2_d + Th1_d * Th1_d * cos(Th1 - Th2));
+    a3 = sin(Th1 - Th2);
+    a4 = (2 - cos(Th1 - Th2) * cos(Th1 - Th2));
+    Th1_dd = (a1 + (a2 * a3)) / a4;
+
+    b1 = 2 * GRAVITY * (sin(Th1) * cos(Th1 - Th2) - sin(Th2));
+    b2 = 2 * Th1_d * Th1_d + Th2_d * Th2_d * cos(Th1 - Th2);
+    b3 = sin(Th1 - Th2);
+    b4 = (2 - cos(Th1 - Th2) * cos(Th1 - Th2));
+
+    Th2_dd = (b1 + (b2 * b3)) / b4;
+
+    gsl_vector_set(out_state, 0, Th1_d);
+    gsl_vector_set(out_state, 1, Th1_dd);
+    gsl_vector_set(out_state, 2, Th2_d);
+    gsl_vector_set(out_state, 3, Th2_dd);
+    return 0;
+}
+int test_sine(double t, gsl_vector * in_state, gsl_vector * out_state){
+    double x1 = gsl_vector_get(in_state, 0);
+    double x2 = gsl_vector_get(in_state, 1);
+    
+    x1 *= -1;
+
+    gsl_vector_set(out_state, 0, x2);
+    gsl_vector_set(out_state, 1, x1);
+    return 0;
+}
+
+int test_high_pow(double t, gsl_vector * in_state, gsl_vector * out_state){
+    double x1 = gsl_vector_get(in_state, 0);
+    double x2 = gsl_vector_get(in_state, 1);
+    
+    x1 *= -1;
+    gsl_vector_set(out_state, 0, pow(x2, 9));
+    gsl_vector_set(out_state, 1, pow(x1, 9));
+    return 0;
+}
 
 static double csc(double arg){
     return(1/sin(arg));
@@ -53,7 +101,7 @@ static double cot(double arg){
 }
 
 int polar2d_lagr(double t, gsl_vector * in_state, gsl_vector * out_state){
-    
+       
     double r, r_d, Th, Th_d;
     
     r = gsl_vector_get(in_state, 0);
@@ -232,2217 +280,344 @@ int kerr_eom_exact(double t, gsl_vector * in_state, gsl_vector * out_state){
 return 0;
 }
 
-     ////////////////////////////////////////////////////////////////////////////////
-     ////////////////////////////////////////////////////////////////////////////////
-     ////////////////////////////////////////////////////////////////////////////////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////							EdGB METRICS                          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ///////														          ///////
-	 ////////////////////////////////////////////////////////////////////////////////
-     ////////////////////////////////////////////////////////////////////////////////
-     ////////////////////////////////////////////////////////////////////////////////
 
-// nENERGYd another auxiliary file where coupling parameters can be specified
-int edgb_o2(double t, gsl_vector * in_state, gsl_vector * out_state){
+int edgb_a2_z1(double t, gsl_vector * in_state, gsl_vector * out_state){
 
-    double r, P_r, Th, PTh, Ph, P_Ph;
+    double r, P_r, Th, P_Th, Ph, P_Ph;
     
     r = gsl_vector_get(in_state, 0);
     P_r = gsl_vector_get(in_state, 1);
     Th = gsl_vector_get(in_state, 2);
-    PTh = gsl_vector_get(in_state, 3);
+    P_Th = gsl_vector_get(in_state, 3);
     Ph = gsl_vector_get(in_state, 4);
     P_Ph = gsl_vector_get(in_state, 5);
     
-    double r_d, P_r_d, Th_d, PTh_d, Ph_d, P_Ph_d;
-    
-    r_d = (2*P_r)/((pow(ALPHA3,2)*(1840*pow(MASS,5) - 48*pow(MASS,4)*r -
-    	  30*pow(MASS,3)*pow(r,2) - 260*pow(MASS,2)*pow(r,3) - 15*MASS*pow(r,4)
-    	  - 15*pow(r,5)))/(15.*BETA*KAPPA*pow(MASS,2)*pow(r,5)*pow(-2*MASS + r,2))
-    	  + (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))/(-2*MASS*r + pow(r,2) +
-    	  pow(SPIN,2)) - (pow(ALPHA3,2)*pow(SPIN,2)*(3675*r*(8000*pow(MASS,9) +
-    	  25312*pow(MASS,8)*r - 22664*pow(MASS,7)*pow(r,2) - 724*pow(MASS,6)*
-    	  pow(r,3) + 640*pow(MASS,5)*pow(r,4) + 1090*pow(MASS,4)*pow(r,5) -
-    	  180*pow(MASS,3)*pow(r,6) + 150*pow(MASS,2)*pow(r,7) - 15*MASS*pow(r,8)
-    	  + 15*pow(r,9)) + MASS*(299880000*pow(MASS,9) - 553896000*pow(MASS,8)*r +
-    	  404007800*pow(MASS,7)*pow(r,2) - 138548200*pow(MASS,6)*pow(r,3) +
-    	  42434430*pow(MASS,5)*pow(r,4) - 26924080*pow(MASS,4)*pow(r,5) + 7433843*
-    	  pow(MASS,3)*pow(r,6) + 357018*pow(MASS,2)*pow(r,7) + 224196*MASS*
-    	  pow(r,8) - 187446*pow(r,9))*(-1 + 3*pow(cos(Th),2))))/(110250.*BETA*
-    	  KAPPA*pow(MASS,4)*pow(2*MASS - r,3)*pow(r,9)));
-    
-    Th_d = (2*PTh)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2) - (pow(ALPHA3,2)*
-        (8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 3416700*pow(MASS,5)*
-        pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 887110*pow(MASS,3)*pow(r,4) + 
-          800733*pow(MASS,2)*pow(r,5) + 435540*MASS*pow(r,6) + 187446*pow(r,7))*
-          pow(SPIN,2)*(1 + 3*cos(2*Th)))/(220500.*BETA*KAPPA*pow(MASS,3)*pow(r,8)));
-    
-    Ph_d = (220500*BETA*KAPPA*pow(MASS,3)*pow(r,8)*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))*
-     (JZ*(220500*BETA*KAPPA*pow(MASS,4)*pow(r,12) - 110250*BETA*KAPPA*pow(MASS,3)*pow(r,11)*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-          7350*pow(ALPHA3,2)*pow(MASS,2)*pow(r,4)*(400*pow(MASS,4) - 96*pow(MASS,3)*r - 66*pow(MASS,2)*pow(r,2) - 130*MASS*pow(r,3) - 5*pow(r,4))*
-           (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + pow(ALPHA3,2)*pow(SPIN,2)*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))*
-           (980000*pow(MASS,7)*r - 13798400*pow(MASS,6)*pow(r,2) + 2660700*pow(MASS,5)*pow(r,3) + 1249500*pow(MASS,4)*pow(r,4) + 
-             1487150*pow(MASS,3)*pow(r,5) + 191100*pow(MASS,2)*pow(r,6) + 257250*MASS*pow(r,7) + 18375*pow(r,8) + 
-             (8820000*pow(MASS,8) - 8173200*pow(MASS,7)*r - 15803900*pow(MASS,6)*pow(r,2) + 4198950*pow(MASS,5)*pow(r,3) + 
-                4061710*pow(MASS,4)*pow(r,4) + 2275145*pow(MASS,3)*pow(r,5) - 164874*pow(MASS,2)*pow(r,6) - 187446*MASS*pow(r,7) - 187446*pow(r,8))*
-              (-1 + 3*pow(cos(Th),2)))) - 7350*ENERGY*pow(MASS,2)*pow(r,4)*SPIN*
-        (30*BETA*KAPPA*pow(MASS,2)*pow(r,8) + pow(ALPHA3,2)*(400*pow(MASS,4) - 144*pow(MASS,3)*r - 90*pow(MASS,2)*pow(r,2) - 140*MASS*pow(r,3) - 
-             9*pow(r,4))*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*pow(sin(Th),2)))/
-   (-54022500*pow(MASS,4)*pow(r,5)*pow(SPIN,2)*pow(30*BETA*KAPPA*pow(MASS,2)*pow(r,8) + 
-        pow(ALPHA3,2)*(400*pow(MASS,4) - 144*pow(MASS,3)*r - 90*pow(MASS,2)*pow(r,2) - 140*MASS*pow(r,3) - 9*pow(r,4))*
-         (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2)*pow(sin(Th),4) + 
-     (220500*BETA*KAPPA*pow(MASS,4)*pow(r,12) - 110250*BETA*KAPPA*pow(MASS,3)*pow(r,11)*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-        7350*pow(ALPHA3,2)*pow(MASS,2)*pow(r,4)*(400*pow(MASS,4) - 96*pow(MASS,3)*r - 66*pow(MASS,2)*pow(r,2) - 130*MASS*pow(r,3) - 5*pow(r,4))*
-         (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + pow(ALPHA3,2)*pow(SPIN,2)*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))*
-         (980000*pow(MASS,7)*r - 13798400*pow(MASS,6)*pow(r,2) + 2660700*pow(MASS,5)*pow(r,3) + 1249500*pow(MASS,4)*pow(r,4) + 
-           1487150*pow(MASS,3)*pow(r,5) + 191100*pow(MASS,2)*pow(r,6) + 257250*MASS*pow(r,7) + 18375*pow(r,8) + 
-           (8820000*pow(MASS,8) - 8173200*pow(MASS,7)*r - 15803900*pow(MASS,6)*pow(r,2) + 4198950*pow(MASS,5)*pow(r,3) + 4061710*pow(MASS,4)*pow(r,4) + 
-              2275145*pow(MASS,3)*pow(r,5) - 164874*pow(MASS,2)*pow(r,6) - 187446*MASS*pow(r,7) - 187446*pow(r,8))*(-1 + 3*pow(cos(Th),2))))*
-      pow(sin(Th),2)*(pow(ALPHA3,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-           887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 435540*MASS*pow(r,6) + 187446*pow(r,7))*pow(SPIN,2)*(1 - 3*pow(cos(Th),2))*
-         (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 110250*BETA*KAPPA*pow(MASS,3)*pow(r,8)*
-         (pow(SPIN,2)*(pow(r,2) + pow(SPIN,2))*pow(cos(Th),2) + r*(pow(r,3) + r*pow(SPIN,2) + 2*MASS*pow(SPIN,2)*pow(sin(Th),2)))));
-    
-    P_r_d = (pow(PTh,2)*(2*r + (4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-             (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-             (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2)))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,2)) - 
-        (4463*pow(ALPHA3,2)*((-1470000*pow(MASS,7))/(4463.*pow(r,8)) + (887600*pow(MASS,6))/(4463.*pow(r,7)) + (406750*pow(MASS,5))/(4463.*pow(r,6)) + 
-             (1237100*pow(MASS,4))/(31241.*pow(r,5)) - (63365*pow(MASS,3))/(4463.*pow(r,4)) - (266911*pow(MASS,2))/(31241.*pow(r,3)) - 
-             (10370*MASS)/(4463.*pow(r,2)))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2)))/(2625.*BETA*KAPPA*pow(MASS,3)*r)))/
-    pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2) - (4463*pow(ALPHA3,2)*
-         (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-           (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*
-         pow(SPIN,2)*(-1 + 3*pow(cos(Th),2)))/(2625.*BETA*KAPPA*pow(MASS,3)*r),2) + 
-   (pow(P_r,2)*((4*pow(ALPHA3,2)*(1 - (368*pow(MASS,5))/(3.*pow(r,5)) + (16*pow(MASS,4))/(5.*pow(r,4)) + (2*pow(MASS,3))/pow(r,3) + 
-             (52*pow(MASS,2))/(3.*pow(r,2)) + MASS/r))/(BETA*KAPPA*MASS*pow(1 - (2*MASS)/r,3)*pow(r,4)) + 
-        (2*pow(ALPHA3,2)*(1 - (368*pow(MASS,5))/(3.*pow(r,5)) + (16*pow(MASS,4))/(5.*pow(r,4)) + (2*pow(MASS,3))/pow(r,3) + 
-             (52*pow(MASS,2))/(3.*pow(r,2)) + MASS/r))/(BETA*KAPPA*pow(MASS,2)*pow(1 - (2*MASS)/r,2)*pow(r,3)) - 
-        (pow(ALPHA3,2)*((1840*pow(MASS,5))/(3.*pow(r,6)) - (64*pow(MASS,4))/(5.*pow(r,5)) - (6*pow(MASS,3))/pow(r,4) - 
-             (104*pow(MASS,2))/(3.*pow(r,3)) - MASS/pow(r,2)))/(BETA*KAPPA*pow(MASS,2)*pow(1 - (2*MASS)/r,2)*pow(r,2)) + 
-        (2*r)/(-2*MASS*r + pow(r,2) + pow(SPIN,2)) - ((-2*MASS + 2*r)*(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))/
-         pow(-2*MASS*r + pow(r,2) + pow(SPIN,2),2) - (pow(ALPHA3,2)*pow(SPIN,2)*
-           (-(1 + (1600*pow(MASS,9))/(3.*pow(r,9)) + (25312*pow(MASS,8))/(15.*pow(r,8)) - (22664*pow(MASS,7))/(15.*pow(r,7)) - 
-                 (724*pow(MASS,6))/(15.*pow(r,6)) + (128*pow(MASS,5))/(3.*pow(r,5)) + (218*pow(MASS,4))/(3.*pow(r,4)) - (12*pow(MASS,3))/pow(r,3) + 
-                 (10*pow(MASS,2))/pow(r,2) - MASS/r)/(2.*MASS) - 
-             (((-4800*pow(MASS,9))/pow(r,10) - (202496*pow(MASS,8))/(15.*pow(r,9)) + (158648*pow(MASS,7))/(15.*pow(r,8)) + 
-                  (1448*pow(MASS,6))/(5.*pow(r,7)) - (640*pow(MASS,5))/(3.*pow(r,6)) - (872*pow(MASS,4))/(3.*pow(r,5)) + (36*pow(MASS,3))/pow(r,4) - 
-                  (20*pow(MASS,2))/pow(r,3) + MASS/pow(r,2))*r)/(2.*MASS) + 
-             (4463*((64260000*pow(MASS,9))/(4463.*pow(r,10)) - (105504000*pow(MASS,8))/(4463.*pow(r,9)) + (202003900*pow(MASS,7))/(13389.*pow(r,8)) - 
-                  (19792600*pow(MASS,6))/(4463.*pow(r,7)) + (35362025*pow(MASS,5))/(31241.*pow(r,6)) - (53848160*pow(MASS,4))/(93723.*pow(r,5)) + 
-                  (7433843*pow(MASS,3))/(62482.*pow(r,4)) + (119006*pow(MASS,2))/(31241.*pow(r,3)) + (5338*MASS)/(4463.*pow(r,2)))*(-1 + 3*pow(cos(Th),2)))/
-              2625.))/(BETA*KAPPA*pow(MASS,3)*pow(1 - (2*MASS)/r,3)*pow(r,3)) + 
-        (6*pow(ALPHA3,2)*pow(SPIN,2)*(-((1 + (1600*pow(MASS,9))/(3.*pow(r,9)) + (25312*pow(MASS,8))/(15.*pow(r,8)) - 
-                   (22664*pow(MASS,7))/(15.*pow(r,7)) - (724*pow(MASS,6))/(15.*pow(r,6)) + (128*pow(MASS,5))/(3.*pow(r,5)) + 
-                   (218*pow(MASS,4))/(3.*pow(r,4)) - (12*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) - MASS/r)*r)/(2.*MASS) + 
-             (4463*(1 - (7140000*pow(MASS,9))/(4463.*pow(r,9)) + (13188000*pow(MASS,8))/(4463.*pow(r,8)) - (28857700*pow(MASS,7))/(13389.*pow(r,7)) + 
-                  (9896300*pow(MASS,6))/(13389.*pow(r,6)) - (7072405*pow(MASS,5))/(31241.*pow(r,5)) + (13462040*pow(MASS,4))/(93723.*pow(r,4)) - 
-                  (7433843*pow(MASS,3))/(187446.*pow(r,3)) - (59503*pow(MASS,2))/(31241.*pow(r,2)) - (5338*MASS)/(4463.*r))*(-1 + 3*pow(cos(Th),2)))/2625.))/
-         (BETA*KAPPA*pow(MASS,2)*pow(1 - (2*MASS)/r,4)*pow(r,5)) + 
-        (3*pow(ALPHA3,2)*pow(SPIN,2)*(-((1 + (1600*pow(MASS,9))/(3.*pow(r,9)) + (25312*pow(MASS,8))/(15.*pow(r,8)) - 
-                   (22664*pow(MASS,7))/(15.*pow(r,7)) - (724*pow(MASS,6))/(15.*pow(r,6)) + (128*pow(MASS,5))/(3.*pow(r,5)) + 
-                   (218*pow(MASS,4))/(3.*pow(r,4)) - (12*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) - MASS/r)*r)/(2.*MASS) + 
-             (4463*(1 - (7140000*pow(MASS,9))/(4463.*pow(r,9)) + (13188000*pow(MASS,8))/(4463.*pow(r,8)) - (28857700*pow(MASS,7))/(13389.*pow(r,7)) + 
-                  (9896300*pow(MASS,6))/(13389.*pow(r,6)) - (7072405*pow(MASS,5))/(31241.*pow(r,5)) + (13462040*pow(MASS,4))/(93723.*pow(r,4)) - 
-                  (7433843*pow(MASS,3))/(187446.*pow(r,3)) - (59503*pow(MASS,2))/(31241.*pow(r,2)) - (5338*MASS)/(4463.*r))*(-1 + 3*pow(cos(Th),2)))/2625.))/
-         (BETA*KAPPA*pow(MASS,3)*pow(1 - (2*MASS)/r,3)*pow(r,4))))/
-    pow(-((pow(ALPHA3,2)*(1 - (368*pow(MASS,5))/(3.*pow(r,5)) + (16*pow(MASS,4))/(5.*pow(r,4)) + (2*pow(MASS,3))/pow(r,3) + 
-             (52*pow(MASS,2))/(3.*pow(r,2)) + MASS/r))/(BETA*KAPPA*pow(MASS,2)*pow(1 - (2*MASS)/r,2)*pow(r,2))) + 
-      (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))/(-2*MASS*r + pow(r,2) + pow(SPIN,2)) - 
-      (pow(ALPHA3,2)*pow(SPIN,2)*(-((1 + (1600*pow(MASS,9))/(3.*pow(r,9)) + (25312*pow(MASS,8))/(15.*pow(r,8)) - (22664*pow(MASS,7))/(15.*pow(r,7)) - 
-                 (724*pow(MASS,6))/(15.*pow(r,6)) + (128*pow(MASS,5))/(3.*pow(r,5)) + (218*pow(MASS,4))/(3.*pow(r,4)) - (12*pow(MASS,3))/pow(r,3) + 
-                 (10*pow(MASS,2))/pow(r,2) - MASS/r)*r)/(2.*MASS) + 
-           (4463*(1 - (7140000*pow(MASS,9))/(4463.*pow(r,9)) + (13188000*pow(MASS,8))/(4463.*pow(r,8)) - (28857700*pow(MASS,7))/(13389.*pow(r,7)) + 
-                (9896300*pow(MASS,6))/(13389.*pow(r,6)) - (7072405*pow(MASS,5))/(31241.*pow(r,5)) + (13462040*pow(MASS,4))/(93723.*pow(r,4)) - 
-                (7433843*pow(MASS,3))/(187446.*pow(r,3)) - (59503*pow(MASS,2))/(31241.*pow(r,2)) - (5338*MASS)/(4463.*r))*(-1 + 3*pow(cos(Th),2)))/2625.))/
-       (BETA*KAPPA*pow(MASS,3)*pow(1 - (2*MASS)/r,3)*pow(r,3)),2) - 
-   JZ*(-((JZ*(-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-              (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-             (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                  (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                  (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                  (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                     (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                     (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-           (-2*((-9*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                   pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,4)) + 
-                (3*pow(ALPHA3,2)*((1600*pow(MASS,4))/(9.*pow(r,5)) - (48*pow(MASS,3))/pow(r,4) - (20*pow(MASS,2))/pow(r,3) - (140*MASS)/(9.*pow(r,2)))*
-                   SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) + 
-                (4*MASS*pow(r,2)*SPIN*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) - 
-                (2*MASS*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-              ((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                   pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-             (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-                 (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-                (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                     (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                     (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                     (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                        (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                        (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-              ((4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                     (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                     (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-                 (2625.*BETA*KAPPA*pow(MASS,3)*pow(r,2)) - (4463*pow(ALPHA3,2)*
-                   ((-1470000*pow(MASS,7))/(4463.*pow(r,8)) + (887600*pow(MASS,6))/(4463.*pow(r,7)) + (406750*pow(MASS,5))/(4463.*pow(r,6)) + 
-                     (1237100*pow(MASS,4))/(31241.*pow(r,5)) - (63365*pow(MASS,3))/(4463.*pow(r,4)) - (266911*pow(MASS,2))/(31241.*pow(r,3)) - 
-                     (10370*MASS)/(4463.*pow(r,2)))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/(2625.*BETA*KAPPA*pow(MASS,3)*r) + 
-                pow(sin(Th),2)*(2*r - (4*MASS*pow(r,2)*pow(SPIN,2)*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + 
-                   (2*MASS*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-             ((pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-                 (BETA*KAPPA*MASS*pow(r,4)) - (pow(ALPHA3,2)*((320*pow(MASS,4))/pow(r,5) - (288*pow(MASS,3))/(5.*pow(r,4)) - 
-                     (132*pow(MASS,2))/(5.*pow(r,3)) - (26*MASS)/pow(r,2)))/(3.*BETA*KAPPA*MASS*pow(r,3)) - 
-                (4*MASS*pow(r,2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + (2*MASS)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-                (4463*pow(ALPHA3,2)*pow(SPIN,2)*((490000*pow(MASS,7))/(13389.*pow(r,8)) - (1971200*pow(MASS,6))/(4463.*pow(r,7)) + 
-                     (316750*pow(MASS,5))/(4463.*pow(r,6)) + (119000*pow(MASS,4))/(4463.*pow(r,5)) + (106225*pow(MASS,3))/(4463.*pow(r,4)) + 
-                     (9100*pow(MASS,2))/(4463.*pow(r,3)) + (6125*MASS)/(4463.*pow(r,2)) + 
-                     ((1680000*pow(MASS,8))/(4463.*pow(r,9)) - (1362200*pow(MASS,7))/(4463.*pow(r,8)) - (2257700*pow(MASS,6))/(4463.*pow(r,7)) + 
-                        (499875*pow(MASS,5))/(4463.*pow(r,6)) + (8123420*pow(MASS,4))/(93723.*pow(r,5)) + (2275145*pow(MASS,3))/(62482.*pow(r,4)) - 
-                        (54958*pow(MASS,2))/(31241.*pow(r,3)) - MASS/pow(r,2))*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + 
-                (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                     (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                     (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                     (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                        (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                        (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(875.*BETA*KAPPA*pow(MASS,3)*pow(r,4)))*
-              ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                     (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                     (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-                 (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-                 (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))))/
-         pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-                 SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2)) - 
-      (ENERGY*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-              pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-         (-2*((-9*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,4)) + 
-              (3*pow(ALPHA3,2)*((1600*pow(MASS,4))/(9.*pow(r,5)) - (48*pow(MASS,3))/pow(r,4) - (20*pow(MASS,2))/pow(r,3) - (140*MASS)/(9.*pow(r,2)))*
-                 SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) + 
-              (4*MASS*pow(r,2)*SPIN*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) - 
-              (2*MASS*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*pow(r,2)) - (4463*pow(ALPHA3,2)*
-                 ((-1470000*pow(MASS,7))/(4463.*pow(r,8)) + (887600*pow(MASS,6))/(4463.*pow(r,7)) + (406750*pow(MASS,5))/(4463.*pow(r,6)) + 
-                   (1237100*pow(MASS,4))/(31241.*pow(r,5)) - (63365*pow(MASS,3))/(4463.*pow(r,4)) - (266911*pow(MASS,2))/(31241.*pow(r,3)) - 
-                   (10370*MASS)/(4463.*pow(r,2)))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/(2625.*BETA*KAPPA*pow(MASS,3)*r) + 
-              pow(sin(Th),2)*(2*r - (4*MASS*pow(r,2)*pow(SPIN,2)*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + 
-                 (2*MASS*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           ((pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (BETA*KAPPA*MASS*pow(r,4)) - (pow(ALPHA3,2)*((320*pow(MASS,4))/pow(r,5) - (288*pow(MASS,3))/(5.*pow(r,4)) - 
-                   (132*pow(MASS,2))/(5.*pow(r,3)) - (26*MASS)/pow(r,2)))/(3.*BETA*KAPPA*MASS*pow(r,3)) - 
-              (4*MASS*pow(r,2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + (2*MASS)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*((490000*pow(MASS,7))/(13389.*pow(r,8)) - (1971200*pow(MASS,6))/(4463.*pow(r,7)) + 
-                   (316750*pow(MASS,5))/(4463.*pow(r,6)) + (119000*pow(MASS,4))/(4463.*pow(r,5)) + (106225*pow(MASS,3))/(4463.*pow(r,4)) + 
-                   (9100*pow(MASS,2))/(4463.*pow(r,3)) + (6125*MASS)/(4463.*pow(r,2)) + 
-                   ((1680000*pow(MASS,8))/(4463.*pow(r,9)) - (1362200*pow(MASS,7))/(4463.*pow(r,8)) - (2257700*pow(MASS,6))/(4463.*pow(r,7)) + 
-                      (499875*pow(MASS,5))/(4463.*pow(r,6)) + (8123420*pow(MASS,4))/(93723.*pow(r,5)) + (2275145*pow(MASS,3))/(62482.*pow(r,4)) - 
-                      (54958*pow(MASS,2))/(31241.*pow(r,3)) - MASS/pow(r,2))*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(875.*BETA*KAPPA*pow(MASS,3)*pow(r,4)))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2) + 
-      (JZ*((pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-            (BETA*KAPPA*MASS*pow(r,4)) - (pow(ALPHA3,2)*((320*pow(MASS,4))/pow(r,5) - (288*pow(MASS,3))/(5.*pow(r,4)) - 
-                (132*pow(MASS,2))/(5.*pow(r,3)) - (26*MASS)/pow(r,2)))/(3.*BETA*KAPPA*MASS*pow(r,3)) - 
-           (4*MASS*pow(r,2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + (2*MASS)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-           (4463*pow(ALPHA3,2)*pow(SPIN,2)*((490000*pow(MASS,7))/(13389.*pow(r,8)) - (1971200*pow(MASS,6))/(4463.*pow(r,7)) + 
-                (316750*pow(MASS,5))/(4463.*pow(r,6)) + (119000*pow(MASS,4))/(4463.*pow(r,5)) + (106225*pow(MASS,3))/(4463.*pow(r,4)) + 
-                (9100*pow(MASS,2))/(4463.*pow(r,3)) + (6125*MASS)/(4463.*pow(r,2)) + 
-                ((1680000*pow(MASS,8))/(4463.*pow(r,9)) - (1362200*pow(MASS,7))/(4463.*pow(r,8)) - (2257700*pow(MASS,6))/(4463.*pow(r,7)) + 
-                   (499875*pow(MASS,5))/(4463.*pow(r,6)) + (8123420*pow(MASS,4))/(93723.*pow(r,5)) + (2275145*pow(MASS,3))/(62482.*pow(r,4)) - 
-                   (54958*pow(MASS,2))/(31241.*pow(r,3)) - MASS/pow(r,2))*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + 
-           (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                   (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(875.*BETA*KAPPA*pow(MASS,3)*pow(r,4))))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))) + 
-      (ENERGY*((-9*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-              pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,4)) + (3*pow(ALPHA3,2)*
-              ((1600*pow(MASS,4))/(9.*pow(r,5)) - (48*pow(MASS,3))/pow(r,4) - (20*pow(MASS,2))/pow(r,3) - (140*MASS)/(9.*pow(r,2)))*SPIN*pow(sin(Th),2))/
-            (5.*BETA*KAPPA*MASS*pow(r,3)) + (4*MASS*pow(r,2)*SPIN*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) - 
-           (2*MASS*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))))) + 
-   ENERGY*((JZ*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-              pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-         (-2*((-9*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,4)) + 
-              (3*pow(ALPHA3,2)*((1600*pow(MASS,4))/(9.*pow(r,5)) - (48*pow(MASS,3))/pow(r,4) - (20*pow(MASS,2))/pow(r,3) - (140*MASS)/(9.*pow(r,2)))*
-                 SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) + 
-              (4*MASS*pow(r,2)*SPIN*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) - 
-              (2*MASS*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*pow(r,2)) - (4463*pow(ALPHA3,2)*
-                 ((-1470000*pow(MASS,7))/(4463.*pow(r,8)) + (887600*pow(MASS,6))/(4463.*pow(r,7)) + (406750*pow(MASS,5))/(4463.*pow(r,6)) + 
-                   (1237100*pow(MASS,4))/(31241.*pow(r,5)) - (63365*pow(MASS,3))/(4463.*pow(r,4)) - (266911*pow(MASS,2))/(31241.*pow(r,3)) - 
-                   (10370*MASS)/(4463.*pow(r,2)))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/(2625.*BETA*KAPPA*pow(MASS,3)*r) + 
-              pow(sin(Th),2)*(2*r - (4*MASS*pow(r,2)*pow(SPIN,2)*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + 
-                 (2*MASS*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           ((pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (BETA*KAPPA*MASS*pow(r,4)) - (pow(ALPHA3,2)*((320*pow(MASS,4))/pow(r,5) - (288*pow(MASS,3))/(5.*pow(r,4)) - 
-                   (132*pow(MASS,2))/(5.*pow(r,3)) - (26*MASS)/pow(r,2)))/(3.*BETA*KAPPA*MASS*pow(r,3)) - 
-              (4*MASS*pow(r,2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + (2*MASS)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*((490000*pow(MASS,7))/(13389.*pow(r,8)) - (1971200*pow(MASS,6))/(4463.*pow(r,7)) + 
-                   (316750*pow(MASS,5))/(4463.*pow(r,6)) + (119000*pow(MASS,4))/(4463.*pow(r,5)) + (106225*pow(MASS,3))/(4463.*pow(r,4)) + 
-                   (9100*pow(MASS,2))/(4463.*pow(r,3)) + (6125*MASS)/(4463.*pow(r,2)) + 
-                   ((1680000*pow(MASS,8))/(4463.*pow(r,9)) - (1362200*pow(MASS,7))/(4463.*pow(r,8)) - (2257700*pow(MASS,6))/(4463.*pow(r,7)) + 
-                      (499875*pow(MASS,5))/(4463.*pow(r,6)) + (8123420*pow(MASS,4))/(93723.*pow(r,5)) + (2275145*pow(MASS,3))/(62482.*pow(r,4)) - 
-                      (54958*pow(MASS,2))/(31241.*pow(r,3)) - MASS/pow(r,2))*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(875.*BETA*KAPPA*pow(MASS,3)*pow(r,4)))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2) + 
-      (ENERGY*((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-            (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-              (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))*
-         (-2*((-9*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,4)) + 
-              (3*pow(ALPHA3,2)*((1600*pow(MASS,4))/(9.*pow(r,5)) - (48*pow(MASS,3))/pow(r,4) - (20*pow(MASS,2))/pow(r,3) - (140*MASS)/(9.*pow(r,2)))*
-                 SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) + 
-              (4*MASS*pow(r,2)*SPIN*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) - 
-              (2*MASS*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*pow(r,2)) - (4463*pow(ALPHA3,2)*
-                 ((-1470000*pow(MASS,7))/(4463.*pow(r,8)) + (887600*pow(MASS,6))/(4463.*pow(r,7)) + (406750*pow(MASS,5))/(4463.*pow(r,6)) + 
-                   (1237100*pow(MASS,4))/(31241.*pow(r,5)) - (63365*pow(MASS,3))/(4463.*pow(r,4)) - (266911*pow(MASS,2))/(31241.*pow(r,3)) - 
-                   (10370*MASS)/(4463.*pow(r,2)))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/(2625.*BETA*KAPPA*pow(MASS,3)*r) + 
-              pow(sin(Th),2)*(2*r - (4*MASS*pow(r,2)*pow(SPIN,2)*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + 
-                 (2*MASS*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           ((pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (BETA*KAPPA*MASS*pow(r,4)) - (pow(ALPHA3,2)*((320*pow(MASS,4))/pow(r,5) - (288*pow(MASS,3))/(5.*pow(r,4)) - 
-                   (132*pow(MASS,2))/(5.*pow(r,3)) - (26*MASS)/pow(r,2)))/(3.*BETA*KAPPA*MASS*pow(r,3)) - 
-              (4*MASS*pow(r,2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + (2*MASS)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*((490000*pow(MASS,7))/(13389.*pow(r,8)) - (1971200*pow(MASS,6))/(4463.*pow(r,7)) + 
-                   (316750*pow(MASS,5))/(4463.*pow(r,6)) + (119000*pow(MASS,4))/(4463.*pow(r,5)) + (106225*pow(MASS,3))/(4463.*pow(r,4)) + 
-                   (9100*pow(MASS,2))/(4463.*pow(r,3)) + (6125*MASS)/(4463.*pow(r,2)) + 
-                   ((1680000*pow(MASS,8))/(4463.*pow(r,9)) - (1362200*pow(MASS,7))/(4463.*pow(r,8)) - (2257700*pow(MASS,6))/(4463.*pow(r,7)) + 
-                      (499875*pow(MASS,5))/(4463.*pow(r,6)) + (8123420*pow(MASS,4))/(93723.*pow(r,5)) + (2275145*pow(MASS,3))/(62482.*pow(r,4)) - 
-                      (54958*pow(MASS,2))/(31241.*pow(r,3)) - MASS/pow(r,2))*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(875.*BETA*KAPPA*pow(MASS,3)*pow(r,4)))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2) - 
-      (JZ*((-9*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-              pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,4)) + (3*pow(ALPHA3,2)*
-              ((1600*pow(MASS,4))/(9.*pow(r,5)) - (48*pow(MASS,3))/pow(r,4) - (20*pow(MASS,2))/pow(r,3) - (140*MASS)/(9.*pow(r,2)))*SPIN*pow(sin(Th),2))/
-            (5.*BETA*KAPPA*MASS*pow(r,3)) + (4*MASS*pow(r,2)*SPIN*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) - 
-           (2*MASS*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))) - 
-      (ENERGY*((4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-            (2625.*BETA*KAPPA*pow(MASS,3)*pow(r,2)) - (4463*pow(ALPHA3,2)*
-              ((-1470000*pow(MASS,7))/(4463.*pow(r,8)) + (887600*pow(MASS,6))/(4463.*pow(r,7)) + (406750*pow(MASS,5))/(4463.*pow(r,6)) + 
-                (1237100*pow(MASS,4))/(31241.*pow(r,5)) - (63365*pow(MASS,3))/(4463.*pow(r,4)) - (266911*pow(MASS,2))/(31241.*pow(r,3)) - 
-                (10370*MASS)/(4463.*pow(r,2)))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/(2625.*BETA*KAPPA*pow(MASS,3)*r) + 
-           pow(sin(Th),2)*(2*r - (4*MASS*pow(r,2)*pow(SPIN,2)*pow(sin(Th),2))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2) + 
-              (2*MASS*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))));
-    
-    PTh_d = (pow(PTh,2)*(-2*pow(SPIN,2)*cos(Th)*sin(Th) + (8926*pow(ALPHA3,2)*
-           (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-             (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r)
-             )*pow(SPIN,2)*cos(Th)*sin(Th))/(875.*BETA*KAPPA*pow(MASS,3)*r)))/
-    pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2) - (4463*pow(ALPHA3,2)*
-         (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-           (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*
-         pow(SPIN,2)*(-1 + 3*pow(cos(Th),2)))/(2625.*BETA*KAPPA*pow(MASS,3)*r),2) + 
-   (pow(P_r,2)*((8926*pow(ALPHA3,2)*(1 - (7140000*pow(MASS,9))/(4463.*pow(r,9)) + (13188000*pow(MASS,8))/(4463.*pow(r,8)) - 
-             (28857700*pow(MASS,7))/(13389.*pow(r,7)) + (9896300*pow(MASS,6))/(13389.*pow(r,6)) - (7072405*pow(MASS,5))/(31241.*pow(r,5)) + 
-             (13462040*pow(MASS,4))/(93723.*pow(r,4)) - (7433843*pow(MASS,3))/(187446.*pow(r,3)) - (59503*pow(MASS,2))/(31241.*pow(r,2)) - 
-             (5338*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*sin(Th))/(875.*BETA*KAPPA*pow(MASS,3)*pow(1 - (2*MASS)/r,3)*pow(r,3)) - 
-        (2*pow(SPIN,2)*cos(Th)*sin(Th))/(-2*MASS*r + pow(r,2) + pow(SPIN,2))))/
-    pow(-((pow(ALPHA3,2)*(1 - (368*pow(MASS,5))/(3.*pow(r,5)) + (16*pow(MASS,4))/(5.*pow(r,4)) + (2*pow(MASS,3))/pow(r,3) + 
-             (52*pow(MASS,2))/(3.*pow(r,2)) + MASS/r))/(BETA*KAPPA*pow(MASS,2)*pow(1 - (2*MASS)/r,2)*pow(r,2))) + 
-      (pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))/(-2*MASS*r + pow(r,2) + pow(SPIN,2)) - 
-      (pow(ALPHA3,2)*pow(SPIN,2)*(-((1 + (1600*pow(MASS,9))/(3.*pow(r,9)) + (25312*pow(MASS,8))/(15.*pow(r,8)) - (22664*pow(MASS,7))/(15.*pow(r,7)) - 
-                 (724*pow(MASS,6))/(15.*pow(r,6)) + (128*pow(MASS,5))/(3.*pow(r,5)) + (218*pow(MASS,4))/(3.*pow(r,4)) - (12*pow(MASS,3))/pow(r,3) + 
-                 (10*pow(MASS,2))/pow(r,2) - MASS/r)*r)/(2.*MASS) + 
-           (4463*(1 - (7140000*pow(MASS,9))/(4463.*pow(r,9)) + (13188000*pow(MASS,8))/(4463.*pow(r,8)) - (28857700*pow(MASS,7))/(13389.*pow(r,7)) + 
-                (9896300*pow(MASS,6))/(13389.*pow(r,6)) - (7072405*pow(MASS,5))/(31241.*pow(r,5)) + (13462040*pow(MASS,4))/(93723.*pow(r,4)) - 
-                (7433843*pow(MASS,3))/(187446.*pow(r,3)) - (59503*pow(MASS,2))/(31241.*pow(r,2)) - (5338*MASS)/(4463.*r))*(-1 + 3*pow(cos(Th),2)))/2625.))/
-       (BETA*KAPPA*pow(MASS,3)*pow(1 - (2*MASS)/r,3)*pow(r,3)),2) - 
-   JZ*((JZ*((8926*pow(ALPHA3,2)*(1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + 
-                (1128850*pow(MASS,6))/(13389.*pow(r,6)) - (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - 
-                (2275145*pow(MASS,3))/(187446.*pow(r,3)) + (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*pow(SPIN,2)*cos(Th)*sin(Th))/
-            (875.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + (4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))) + 
-      (ENERGY*((6*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*cos(Th)*
-              sin(Th))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (4*MASS*r*SPIN*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-           (4*MASS*r*pow(SPIN,3)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))) - 
-      (JZ*(-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-            (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-           (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                   (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-         (-2*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((6*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 cos(Th)*sin(Th))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (4*MASS*r*SPIN*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4*MASS*r*pow(SPIN,3)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)) + 
-           ((8926*pow(ALPHA3,2)*(1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + 
-                   (1128850*pow(MASS,6))/(13389.*pow(r,6)) - (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - 
-                   (2275145*pow(MASS,3))/(187446.*pow(r,3)) + (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*pow(SPIN,2)*cos(Th)*sin(Th))/
-               (875.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + (4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((-8926*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*(-1 + 3*pow(cos(Th),2))*sin(Th))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + (8926*pow(ALPHA3,2)*
-                 (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-                   (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + 
-                   (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*pow(sin(Th),3))/(875.*BETA*KAPPA*pow(MASS,3)*r) + 
-              2*cos(Th)*sin(Th)*(pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-              pow(sin(Th),2)*((4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-                 (4*MASS*r*pow(SPIN,4)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2) - 
-      (ENERGY*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-              pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-         (-2*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((6*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 cos(Th)*sin(Th))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (4*MASS*r*SPIN*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4*MASS*r*pow(SPIN,3)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)) + 
-           ((8926*pow(ALPHA3,2)*(1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + 
-                   (1128850*pow(MASS,6))/(13389.*pow(r,6)) - (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - 
-                   (2275145*pow(MASS,3))/(187446.*pow(r,3)) + (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*pow(SPIN,2)*cos(Th)*sin(Th))/
-               (875.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + (4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((-8926*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*(-1 + 3*pow(cos(Th),2))*sin(Th))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + (8926*pow(ALPHA3,2)*
-                 (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-                   (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + 
-                   (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*pow(sin(Th),3))/(875.*BETA*KAPPA*pow(MASS,3)*r) + 
-              2*cos(Th)*sin(Th)*(pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-              pow(sin(Th),2)*((4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-                 (4*MASS*r*pow(SPIN,4)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2)) + 
-   ENERGY*(-((JZ*((6*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                cos(Th)*sin(Th))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (4*MASS*r*SPIN*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-             (4*MASS*r*pow(SPIN,3)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))/
-         (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))))) - 
-      (ENERGY*((-8926*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*(-1 + 3*pow(cos(Th),2))*sin(Th))/
-            (2625.*BETA*KAPPA*pow(MASS,3)*r) + (8926*pow(ALPHA3,2)*
-              (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-                (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + 
-                (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*pow(sin(Th),3))/(875.*BETA*KAPPA*pow(MASS,3)*r) + 
-           2*cos(Th)*sin(Th)*(pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-           pow(sin(Th),2)*((4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-              (4*MASS*r*pow(SPIN,4)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2))))/
-       (-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-               pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))) + 
-      (JZ*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-              pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-         (-2*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((6*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 cos(Th)*sin(Th))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (4*MASS*r*SPIN*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4*MASS*r*pow(SPIN,3)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)) + 
-           ((8926*pow(ALPHA3,2)*(1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + 
-                   (1128850*pow(MASS,6))/(13389.*pow(r,6)) - (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - 
-                   (2275145*pow(MASS,3))/(187446.*pow(r,3)) + (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*pow(SPIN,2)*cos(Th)*sin(Th))/
-               (875.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + (4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((-8926*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*(-1 + 3*pow(cos(Th),2))*sin(Th))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + (8926*pow(ALPHA3,2)*
-                 (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-                   (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + 
-                   (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*pow(sin(Th),3))/(875.*BETA*KAPPA*pow(MASS,3)*r) + 
-              2*cos(Th)*sin(Th)*(pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-              pow(sin(Th),2)*((4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-                 (4*MASS*r*pow(SPIN,4)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2) + 
-      (ENERGY*((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-            (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-              (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))))*
-         (-2*((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))*
-            ((6*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*SPIN*
-                 cos(Th)*sin(Th))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (4*MASS*r*SPIN*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4*MASS*r*pow(SPIN,3)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)) + 
-           ((8926*pow(ALPHA3,2)*(1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + 
-                   (1128850*pow(MASS,6))/(13389.*pow(r,6)) - (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - 
-                   (2275145*pow(MASS,3))/(187446.*pow(r,3)) + (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*pow(SPIN,2)*cos(Th)*sin(Th))/
-               (875.*BETA*KAPPA*pow(MASS,3)*pow(r,3)) + (4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2))*
-            ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*
-               (pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))) + 
-           (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-               (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-              (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                   (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                   (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                      (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                      (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-            ((-8926*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                   (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                   (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*(-1 + 3*pow(cos(Th),2))*sin(Th))/
-               (2625.*BETA*KAPPA*pow(MASS,3)*r) + (8926*pow(ALPHA3,2)*
-                 (1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - (81350*pow(MASS,5))/(4463.*pow(r,5)) - 
-                   (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + (266911*pow(MASS,2))/(62482.*pow(r,2)) + 
-                   (10370*MASS)/(4463.*r))*pow(SPIN,2)*cos(Th)*pow(sin(Th),3))/(875.*BETA*KAPPA*pow(MASS,3)*r) + 
-              2*cos(Th)*sin(Th)*(pow(r,2) + pow(SPIN,2) + (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2))) + 
-              pow(sin(Th),2)*((4*MASS*r*pow(SPIN,2)*cos(Th)*sin(Th))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) + 
-                 (4*MASS*r*pow(SPIN,4)*cos(Th)*pow(sin(Th),3))/pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2),2)))))/
-       pow(-pow((3*pow(ALPHA3,2)*(1 - (400*pow(MASS,4))/(9.*pow(r,4)) + (16*pow(MASS,3))/pow(r,3) + (10*pow(MASS,2))/pow(r,2) + (140*MASS)/(9.*r))*
-               SPIN*pow(sin(Th),2))/(5.*BETA*KAPPA*MASS*pow(r,3)) - (2*MASS*r*SPIN*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)),2) + 
-         (-1 - (pow(ALPHA3,2)*(1 - (80*pow(MASS,4))/pow(r,4) + (96*pow(MASS,3))/(5.*pow(r,3)) + (66*pow(MASS,2))/(5.*pow(r,2)) + (26*MASS)/r))/
-             (3.*BETA*KAPPA*MASS*pow(r,3)) + (2*MASS*r)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)) - 
-            (4463*pow(ALPHA3,2)*pow(SPIN,2)*(-0.09802823213085368 - (70000*pow(MASS,7))/(13389.*pow(r,7)) + (985600*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (63350*pow(MASS,5))/(4463.*pow(r,5)) - (29750*pow(MASS,4))/(4463.*pow(r,4)) - (106225*pow(MASS,3))/(13389.*pow(r,3)) - 
-                 (4550*pow(MASS,2))/(4463.*pow(r,2)) - (6125*MASS)/(4463.*r) + 
-                 (1 - (210000*pow(MASS,8))/(4463.*pow(r,8)) + (194600*pow(MASS,7))/(4463.*pow(r,7)) + (1128850*pow(MASS,6))/(13389.*pow(r,6)) - 
-                    (99975*pow(MASS,5))/(4463.*pow(r,5)) - (2030855*pow(MASS,4))/(93723.*pow(r,4)) - (2275145*pow(MASS,3))/(187446.*pow(r,3)) + 
-                    (27479*pow(MASS,2))/(31241.*pow(r,2)) + MASS/r)*(-1 + 3*pow(cos(Th),2))))/(2625.*BETA*KAPPA*pow(MASS,3)*pow(r,3)))*
-          ((-4463*pow(ALPHA3,2)*(1 + (210000*pow(MASS,7))/(4463.*pow(r,7)) - (443800*pow(MASS,6))/(13389.*pow(r,6)) - 
-                 (81350*pow(MASS,5))/(4463.*pow(r,5)) - (309275*pow(MASS,4))/(31241.*pow(r,4)) + (63365*pow(MASS,3))/(13389.*pow(r,3)) + 
-                 (266911*pow(MASS,2))/(62482.*pow(r,2)) + (10370*MASS)/(4463.*r))*pow(SPIN,2)*(-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (2625.*BETA*KAPPA*pow(MASS,3)*r) + pow(sin(Th),2)*(pow(r,2) + pow(SPIN,2) + 
-               (2*MASS*r*pow(SPIN,2)*pow(sin(Th),2))/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2)))),2));
-        
-    P_Ph_d = 0.;
-    
+    double r_d, P_r_d, Th_d, P_Th_d, Ph_d, P_Ph_d;
+
+    r_d = P_r + ZETA*((-368*pow(MASS,7)*P_r)/(3.*pow(r,7)) + 
+      (16*pow(MASS,6)*P_r)/(5.*pow(r,6)) + (2*pow(MASS,5)*P_r)/pow(r,5) + 
+      (52*pow(MASS,4)*P_r)/(3.*pow(r,4)) + (pow(MASS,3)*P_r)/pow(r,3) + 
+      (pow(MASS,2)*P_r)/pow(r,2)) - (2*MASS*P_r)/r + 
+   pow(SPIN,2)*(-((P_r*(-2*MASS*pow(cos(Th),2) - r + pow(cos(Th),2)*r))/
+         pow(r,3)) + (ZETA*P_r*(-149940000*pow(MASS,9) + 
+           449820000*pow(MASS,9)*pow(cos(Th),2) + 216678000*pow(MASS,8)*r - 
+           605934000*pow(MASS,8)*pow(cos(Th),2)*r - 
+           47154100*pow(MASS,7)*pow(r,2) + 
+           330092700*pow(MASS,7)*pow(cos(Th),2)*pow(r,2) + 
+           17575950*pow(MASS,6)*pow(r,3) - 
+           57005550*pow(MASS,6)*pow(cos(Th),2)*pow(r,3) - 
+           14112390*pow(MASS,5)*pow(r,4) + 
+           35060670*pow(MASS,5)*pow(cos(Th),2)*pow(r,4) + 
+           7361345*pow(MASS,4)*pow(r,5) - 
+           26457285*pow(MASS,4)*pow(cos(Th),2)*pow(r,5) + 
+           55626*pow(MASS,3)*pow(r,6) - 
+           387378*pow(MASS,3)*pow(cos(Th),2)*pow(r,6) - 
+           591696*pow(MASS,2)*pow(r,7) + 
+           231588*pow(MASS,2)*pow(cos(Th),2)*pow(r,7) - 242571*MASS*pow(r,8) + 
+           562338*MASS*pow(cos(Th),2)*pow(r,8) - 55125*pow(r,9)))/
+       (110250.*pow(r,11)));
+
+    P_r_d = (ZETA*(-103040*pow(MASS,10)*pow(P_r,2) + 156864*pow(MASS,9)*pow(P_r,2)*r - 
+        4000*pow(ENERGY,2)*pow(MASS,8)*pow(r,2) - 
+        79536*pow(MASS,8)*pow(P_r,2)*pow(r,2) + 
+        3568*pow(ENERGY,2)*pow(MASS,7)*pow(r,3) + 
+        21128*pow(MASS,7)*pow(P_r,2)*pow(r,3) - 
+        180*pow(ENERGY,2)*pow(MASS,6)*pow(r,4) - 
+        11508*pow(MASS,6)*pow(P_r,2)*pow(r,4) + 
+        190*pow(ENERGY,2)*pow(MASS,5)*pow(r,5) + 
+        5790*pow(MASS,5)*pow(P_r,2)*pow(r,5) - 
+        510*pow(ENERGY,2)*pow(MASS,4)*pow(r,6) - 
+        1130*pow(MASS,4)*pow(P_r,2)*pow(r,6) - 
+        15*pow(ENERGY,2)*pow(MASS,3)*pow(r,7) + 
+        135*pow(MASS,3)*pow(P_r,2)*pow(r,7) - 
+        30*pow(MASS,2)*pow(P_r,2)*pow(r,8)))/
+    (30.*pow(2*MASS - r,3)*pow(r,8)) + 
+   ((2*pow(JZ,2)*pow(csc(Th),2))/pow(r,3) + 
+      (2*pow(P_Th,2))/pow(r,3) - (2*MASS*pow(P_r,2))/pow(r,2) - 
+      (pow(ENERGY,2)*r)/pow(-2*MASS + r,2) + 
+      (pow(ENERGY,2))/(-2*MASS + r))/2. + 
+   SPIN*((-2*ENERGY*JZ*(4*pow(MASS,2) - 3*MASS*r))/
+       (pow(2*MASS - r,2)*pow(r,3)) + 
+      (ENERGY*JZ*ZETA*(6944*pow(MASS,8) - 5616*pow(MASS,7)*r + 
+           68*pow(MASS,6)*pow(r,2) - 566*pow(MASS,5)*pow(r,3) + 
+           738*pow(MASS,4)*pow(r,4) + 45*pow(MASS,3)*pow(r,5)))/
+       (15.*pow(2*MASS - r,3)*pow(r,8))) + 
+   pow(SPIN,2)*(((-16*pow(JZ,2)*pow(MASS,3)*pow(csc(Th),2) + 
+           16*pow(JZ,2)*pow(MASS,3)*pow(csc(Th),4) + 
+           16*pow(MASS,3)*pow(cot(Th),2)*pow(P_Th,2) + 
+           18*pow(JZ,2)*pow(MASS,2)*pow(csc(Th),2)*r - 
+           24*pow(JZ,2)*pow(MASS,2)*pow(csc(Th),4)*r - 
+           24*pow(MASS,4)*pow(cot(Th),2)*pow(P_r,2)*r - 
+           24*pow(MASS,2)*pow(cot(Th),2)*pow(P_Th,2)*r - 
+           8*pow(ENERGY,2)*pow(MASS,3)*pow(r,2) - 
+           5*pow(JZ,2)*MASS*pow(csc(Th),2)*pow(r,2) + 
+           12*pow(JZ,2)*MASS*pow(csc(Th),4)*pow(r,2) + 
+           44*pow(MASS,3)*pow(cot(Th),2)*pow(P_r,2)*pow(r,2) - 
+           8*pow(MASS,3)*pow(csc(Th),2)*pow(P_r,2)*pow(r,2) + 
+           12*MASS*pow(cot(Th),2)*pow(P_Th,2)*pow(r,2) + 
+           8*pow(ENERGY,2)*pow(MASS,2)*pow(r,3) - 
+           2*pow(ENERGY,2)*pow(MASS,2)*pow(cot(Th),2)*pow(r,3) - 
+           2*pow(JZ,2)*pow(csc(Th),4)*pow(r,3) - 
+           30*pow(MASS,2)*pow(cot(Th),2)*pow(P_r,2)*pow(r,3) + 
+           12*pow(MASS,2)*pow(csc(Th),2)*pow(P_r,2)*pow(r,3) - 
+           2*pow(cot(Th),2)*pow(P_Th,2)*pow(r,3) + 
+           3*pow(ENERGY,2)*MASS*pow(cot(Th),2)*pow(r,4) + 
+           9*MASS*pow(cot(Th),2)*pow(P_r,2)*pow(r,4) - 
+           6*MASS*pow(csc(Th),2)*pow(P_r,2)*pow(r,4) - 
+           pow(cot(Th),2)*pow(P_r,2)*pow(r,5) + 
+           pow(csc(Th),2)*pow(P_r,2)*pow(r,5))*pow(sin(Th),2))/
+       (pow(r,5)*pow(-2*MASS + r,3)) + 
+      (ZETA*(5080320000*pow(JZ,2)*pow(MASS,12)*pow(cot(Th),2)*
+            pow(csc(Th),2) - 1693440000*pow(JZ,2)*pow(MASS,12)*
+            pow(csc(Th),4) + 5080320000*pow(MASS,12)*pow(cot(Th),2)*
+            pow(P_Th,2) - 1693440000*pow(MASS,12)*pow(csc(Th),2)*pow(P_Th,2) + 
+           517440000*pow(JZ,2)*pow(MASS,11)*pow(csc(Th),2)*r - 
+           13441209600*pow(JZ,2)*pow(MASS,11)*pow(cot(Th),2)*
+            pow(csc(Th),2)*r + 
+           4480403200*pow(JZ,2)*pow(MASS,11)*pow(csc(Th),4)*r + 
+           79168320000*pow(MASS,13)*pow(cot(Th),2)*pow(P_r,2)*r - 
+           26389440000*pow(MASS,13)*pow(csc(Th),2)*pow(P_r,2)*r - 
+           13441209600*pow(MASS,11)*pow(cot(Th),2)*pow(P_Th,2)*r + 
+           4480403200*pow(MASS,11)*pow(csc(Th),2)*pow(P_Th,2)*r - 
+           1260672000*pow(JZ,2)*pow(MASS,10)*pow(csc(Th),2)*
+            pow(r,2) + 12541603200*pow(JZ,2)*pow(MASS,10)*
+            pow(cot(Th),2)*pow(csc(Th),2)*pow(r,2) - 
+           4180534400*pow(JZ,2)*pow(MASS,10)*pow(csc(Th),4)*
+            pow(r,2) - 255286080000*pow(MASS,12)*pow(cot(Th),2)*pow(P_r,2)*
+            pow(r,2) + 87447360000*pow(MASS,12)*pow(csc(Th),2)*pow(P_r,2)*
+            pow(r,2) + 12541603200*pow(MASS,10)*pow(cot(Th),2)*pow(P_Th,2)*
+            pow(r,2) - 4180534400*pow(MASS,10)*pow(csc(Th),2)*pow(P_Th,2)*
+            pow(r,2) - 952560000*pow(ENERGY,2)*pow(MASS,11)*
+            pow(cot(Th),2)*pow(r,3) + 
+           950443200*pow(JZ,2)*pow(MASS,9)*pow(csc(Th),2)*pow(r,3) + 
+           317520000*pow(ENERGY,2)*pow(MASS,11)*pow(csc(Th),2)*
+            pow(r,3) - 4982623200*pow(JZ,2)*pow(MASS,9)*
+            pow(cot(Th),2)*pow(csc(Th),2)*pow(r,3) + 
+           1660874400*pow(JZ,2)*pow(MASS,9)*pow(csc(Th),4)*
+            pow(r,3) + 360184708800*pow(MASS,11)*pow(cot(Th),2)*pow(P_r,2)*
+            pow(r,3) - 115711310400*pow(MASS,11)*pow(csc(Th),2)*pow(P_r,2)*
+            pow(r,3) - 4982623200*pow(MASS,9)*pow(cot(Th),2)*pow(P_Th,2)*
+            pow(r,3) + 1660874400*pow(MASS,9)*pow(csc(Th),2)*pow(P_Th,2)*
+            pow(r,3) + 1843027200*pow(ENERGY,2)*pow(MASS,10)*
+            pow(cot(Th),2)*pow(r,4) - 
+           300585600*pow(JZ,2)*pow(MASS,8)*pow(csc(Th),2)*pow(r,4) - 
+           645702400*pow(ENERGY,2)*pow(MASS,10)*pow(csc(Th),2)*
+            pow(r,4) + 1441712640*pow(JZ,2)*pow(MASS,8)*
+            pow(cot(Th),2)*pow(csc(Th),2)*pow(r,4) - 
+           480570880*pow(JZ,2)*pow(MASS,8)*pow(csc(Th),4)*pow(r,4) - 
+           287371728000*pow(MASS,10)*pow(cot(Th),2)*pow(P_r,2)*pow(r,4) + 
+           81027542400*pow(MASS,10)*pow(csc(Th),2)*pow(P_r,2)*pow(r,4) + 
+           1441712640*pow(MASS,8)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,4) - 
+           480570880*pow(MASS,8)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,4) - 
+           204153600*pow(ENERGY,2)*pow(MASS,9)*pow(r,5) - 
+           10878000*pow(ENERGY,2)*pow(MASS,9)*pow(cot(Th),2)*pow(r,5) + 
+           177752400*pow(JZ,2)*pow(MASS,7)*pow(csc(Th),2)*pow(r,5) + 
+           370381200*pow(ENERGY,2)*pow(MASS,9)*pow(csc(Th),2)*
+            pow(r,5) - 999742992*pow(JZ,2)*pow(MASS,7)*
+            pow(cot(Th),2)*pow(csc(Th),2)*pow(r,5) + 
+           333247664*pow(JZ,2)*pow(MASS,7)*pow(csc(Th),4)*pow(r,5) + 
+           143242979040*pow(MASS,9)*pow(cot(Th),2)*pow(P_r,2)*pow(r,5) - 
+           35248896480*pow(MASS,9)*pow(csc(Th),2)*pow(P_r,2)*pow(r,5) - 
+           999742992*pow(MASS,7)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,5) + 
+           333247664*pow(MASS,7)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,5) + 
+           179692800*pow(ENERGY,2)*pow(MASS,8)*pow(r,6) - 
+           1422834000*pow(ENERGY,2)*pow(MASS,8)*pow(cot(Th),2)*
+            pow(r,6) - 130771200*pow(JZ,2)*pow(MASS,6)*
+            pow(csc(Th),2)*pow(r,6) + 
+           9562000*pow(ENERGY,2)*pow(MASS,8)*pow(csc(Th),2)*pow(r,6) + 
+           396637704*pow(JZ,2)*pow(MASS,6)*pow(cot(Th),2)*
+            pow(csc(Th),2)*pow(r,6) - 
+           132212568*pow(JZ,2)*pow(MASS,6)*pow(csc(Th),4)*pow(r,6) - 
+           51164569440*pow(MASS,8)*pow(cot(Th),2)*pow(P_r,2)*pow(r,6) + 
+           12804322080*pow(MASS,8)*pow(csc(Th),2)*pow(P_r,2)*pow(r,6) + 
+           396637704*pow(MASS,6)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,6) - 
+           132212568*pow(MASS,6)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,6) - 
+           4821600*pow(ENERGY,2)*pow(MASS,7)*pow(r,7) + 
+           529716900*pow(ENERGY,2)*pow(MASS,7)*pow(cot(Th),2)*
+            pow(r,7) + 26195400*pow(JZ,2)*pow(MASS,5)*pow(csc(Th),2)*
+            pow(r,7) - 4876300*pow(ENERGY,2)*pow(MASS,7)*pow(csc(Th),2)*
+            pow(r,7) - 22742238*pow(JZ,2)*pow(MASS,5)*pow(cot(Th),2)*
+            pow(csc(Th),2)*pow(r,7) + 
+           7580746*pow(JZ,2)*pow(MASS,5)*pow(csc(Th),4)*pow(r,7) + 
+           17558190540*pow(MASS,7)*pow(cot(Th),2)*pow(P_r,2)*pow(r,7) - 
+           5329057380*pow(MASS,7)*pow(csc(Th),2)*pow(P_r,2)*pow(r,7) - 
+           22742238*pow(MASS,5)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,7) + 
+           7580746*pow(MASS,5)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,7) + 
+           14582400*pow(ENERGY,2)*pow(MASS,6)*pow(r,8) + 
+           97514160*pow(ENERGY,2)*pow(MASS,6)*pow(cot(Th),2)*pow(r,8) + 
+           2116800*pow(JZ,2)*pow(MASS,4)*pow(csc(Th),2)*pow(r,8) - 
+           42579120*pow(ENERGY,2)*pow(MASS,6)*pow(csc(Th),2)*pow(r,8) - 
+           15053304*pow(JZ,2)*pow(MASS,4)*pow(cot(Th),2)*
+            pow(csc(Th),2)*pow(r,8) + 
+           5017768*pow(JZ,2)*pow(MASS,4)*pow(csc(Th),4)*pow(r,8) - 
+           6152488848*pow(MASS,6)*pow(cot(Th),2)*pow(P_r,2)*pow(r,8) + 
+           1944166416*pow(MASS,6)*pow(csc(Th),2)*pow(P_r,2)*pow(r,8) - 
+           15053304*pow(MASS,4)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,8) + 
+           5017768*pow(MASS,4)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,8) - 
+           25578000*pow(ENERGY,2)*pow(MASS,5)*pow(r,9) + 
+           31276254*pow(ENERGY,2)*pow(MASS,5)*pow(cot(Th),2)*pow(r,9) - 
+           346118*pow(ENERGY,2)*pow(MASS,5)*pow(csc(Th),2)*pow(r,9) + 
+           21578193*pow(JZ,2)*pow(MASS,3)*pow(cot(Th),2)*
+            pow(csc(Th),2)*pow(r,9) - 
+           7192731*pow(JZ,2)*pow(MASS,3)*pow(csc(Th),4)*pow(r,9) + 
+           1466237970*pow(MASS,5)*pow(cot(Th),2)*pow(P_r,2)*pow(r,9) - 
+           381362490*pow(MASS,5)*pow(csc(Th),2)*pow(P_r,2)*pow(r,9) + 
+           21578193*pow(MASS,3)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,9) - 
+           7192731*pow(MASS,3)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,9) - 
+           1587600*pow(ENERGY,2)*pow(MASS,4)*pow(r,10) - 
+           45249858*pow(ENERGY,2)*pow(MASS,4)*pow(cot(Th),2)*
+            pow(r,10) + 6865986*pow(ENERGY,2)*pow(MASS,4)*
+            pow(csc(Th),2)*pow(r,10) - 
+           14653800*pow(JZ,2)*pow(MASS,2)*pow(cot(Th),2)*
+            pow(csc(Th),2)*pow(r,10) + 
+           4884600*pow(JZ,2)*pow(MASS,2)*pow(csc(Th),4)*pow(r,10) - 
+           175000590*pow(MASS,4)*pow(cot(Th),2)*pow(P_r,2)*pow(r,10) + 
+           6663030*pow(MASS,4)*pow(csc(Th),2)*pow(P_r,2)*pow(r,10) - 
+           14653800*pow(MASS,2)*pow(cot(Th),2)*pow(P_Th,2)*pow(r,10) + 
+           4884600*pow(MASS,2)*pow(csc(Th),2)*pow(P_Th,2)*pow(r,10) - 
+           2025594*pow(ENERGY,2)*pow(MASS,3)*pow(cot(Th),2)*pow(r,11) + 
+           2733198*pow(ENERGY,2)*pow(MASS,3)*pow(csc(Th),2)*pow(r,11) + 
+           2811690*pow(JZ,2)*MASS*pow(cot(Th),2)*pow(csc(Th),2)*
+            pow(r,11) - 937230*pow(JZ,2)*MASS*pow(csc(Th),4)*
+            pow(r,11) + 31140630*pow(MASS,3)*pow(cot(Th),2)*pow(P_r,2)*
+            pow(r,11) + 5275290*pow(MASS,3)*pow(csc(Th),2)*pow(P_r,2)*
+            pow(r,11) + 2811690*MASS*pow(cot(Th),2)*pow(P_Th,2)*
+            pow(r,11) - 937230*MASS*pow(csc(Th),2)*pow(P_Th,2)*pow(r,11) - 
+           2249352*pow(ENERGY,2)*pow(MASS,2)*pow(cot(Th),2)*pow(r,12) - 
+           132216*pow(ENERGY,2)*pow(MASS,2)*pow(csc(Th),2)*pow(r,12) - 
+           12569760*pow(MASS,2)*pow(cot(Th),2)*pow(P_r,2)*pow(r,12) + 
+           808920*pow(MASS,2)*pow(csc(Th),2)*pow(P_r,2)*pow(r,12) + 
+           1687014*pow(ENERGY,2)*MASS*pow(cot(Th),2)*pow(r,13) - 
+           617463*pow(ENERGY,2)*MASS*pow(csc(Th),2)*pow(r,13) + 
+           1687014*MASS*pow(cot(Th),2)*pow(P_r,2)*pow(r,13) + 
+           154287*MASS*pow(csc(Th),2)*pow(P_r,2)*pow(r,13) - 
+           110250*pow(csc(Th),2)*pow(P_r,2)*pow(r,14))*pow(sin(Th),2))/
+       (220500.*pow(r,13)*pow(-2*MASS + r,4)));
+
+    Th_d = P_Th/pow(r,2) + pow(SPIN,2)*(-((pow(cos(Th),2)*P_Th)/pow(r,4)) + 
+      (MASS*ZETA*(-1 + 3*pow(cos(Th),2))*P_Th*
+         (8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
+           3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
+           887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
+           435540*MASS*pow(r,6) + 187446*pow(r,7)))/(110250.*pow(r,12)));
+
+    P_Th_d = (pow(JZ,2)*cot(Th)*pow(csc(Th),2))/pow(r,2) + 
+   pow(SPIN,2)*(((4*pow(ENERGY,2)*MASS*cot(Th))/(r*pow(-2*MASS + r,2)) - 
+         (pow(JZ,2)*(4*MASS*cot(Th)*pow(csc(Th),2) - 
+              2*cot(Th)*pow(csc(Th),2)*r))/((2*MASS - r)*pow(r,4)) - 
+         (2*cos(Th)*pow(P_Th,2)*sin(Th))/pow(r,4) - 
+         (4*pow(ENERGY,2)*cos(Th)*(2*pow(MASS,2) + MASS*pow(cot(Th),2)*r)*
+            sin(Th))/(pow(r,2)*pow(-2*MASS + r,2)) + 
+         (pow(P_r,2)*(4*MASS*cos(Th)*sin(Th) - 2*cos(Th)*r*sin(Th)))/
+          pow(r,3))/2. + (ZETA*(-(pow(JZ,2)*
+               (-141120000*pow(MASS,10)*cot(Th)*pow(csc(Th),2) + 
+                 240531200*pow(MASS,9)*cot(Th)*pow(csc(Th),2)*r - 
+                 80024000*pow(MASS,8)*cot(Th)*pow(csc(Th),2)*pow(r,2) - 
+                 124000*pow(MASS,7)*cot(Th)*pow(csc(Th),2)*pow(r,3) - 
+                 30217360*pow(MASS,6)*cot(Th)*pow(csc(Th),2)*pow(r,4) + 
+                 8804632*pow(MASS,5)*cot(Th)*pow(csc(Th),2)*pow(r,5) + 
+                 2294648*pow(MASS,4)*cot(Th)*pow(csc(Th),2)*pow(r,6) + 
+                 766572*pow(MASS,3)*cot(Th)*pow(csc(Th),2)*pow(r,7) + 
+                 1256976*pow(MASS,2)*cot(Th)*pow(csc(Th),2)*pow(r,8) - 
+                 749784*MASS*cot(Th)*pow(csc(Th),2)*pow(r,9)))/
+            (110250.*pow(r,12)*pow(-2*MASS + r,2)) + 
+           (MASS*cos(Th)*pow(P_Th,2)*
+              (8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
+                3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
+                887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
+                435540*MASS*pow(r,6) + 187446*pow(r,7))*sin(Th))/
+            (18375.*pow(r,12)) - 
+           (pow(ENERGY,2)*cos(Th)*
+              (52920000*pow(MASS,10)*pow(cot(Th),2) - 
+                17640000*pow(MASS,10)*pow(csc(Th),2) - 
+                75499200*pow(MASS,9)*pow(cot(Th),2)*r + 
+                27126400*pow(MASS,9)*pow(csc(Th),2)*r + 
+                14582400*pow(MASS,8)*pow(r,2) - 
+                58543800*pow(MASS,8)*pow(cot(Th),2)*pow(r,2) - 
+                5142200*pow(MASS,8)*pow(csc(Th),2)*pow(r,2) - 
+                2822400*pow(MASS,7)*pow(r,3) + 
+                69783000*pow(MASS,7)*pow(cot(Th),2)*pow(r,3) - 
+                5082000*pow(MASS,7)*pow(csc(Th),2)*pow(r,3) - 
+                2058000*pow(MASS,6)*pow(r,4) + 
+                9833010*pow(MASS,6)*pow(cot(Th),2)*pow(r,4) - 
+                4086170*pow(MASS,6)*pow(csc(Th),2)*pow(r,4) - 
+                3880800*pow(MASS,5)*pow(r,5) - 
+                2356260*pow(MASS,5)*pow(cot(Th),2)*pow(r,5) + 
+                1236220*pow(MASS,5)*pow(csc(Th),2)*pow(r,5) - 
+                264600*pow(MASS,4)*pow(r,6) - 
+                7961679*pow(MASS,4)*pow(cot(Th),2)*pow(r,6) + 
+                1499943*pow(MASS,4)*pow(csc(Th),2)*pow(r,6) - 
+                630054*pow(MASS,3)*pow(cot(Th),2)*pow(r,7) + 
+                533418*pow(MASS,3)*pow(csc(Th),2)*pow(r,7) - 
+                562338*pow(MASS,2)*pow(cot(Th),2)*pow(r,8) - 
+                33054*pow(MASS,2)*pow(csc(Th),2)*pow(r,8) + 
+                562338*MASS*pow(cot(Th),2)*pow(r,9) - 
+                205821*MASS*pow(csc(Th),2)*pow(r,9))*sin(Th))/
+            (55125.*pow(r,9)*pow(-2*MASS + r,3)) - 
+           (pow(ENERGY,2)*(-70560000*pow(MASS,10)*cot(Th)*pow(csc(Th),2) + 
+                96745600*pow(MASS,9)*cot(Th)*pow(csc(Th),2)*r + 
+                127372000*pow(MASS,8)*cot(Th)*pow(csc(Th),2)*pow(r,2) - 
+                129402000*pow(MASS,7)*cot(Th)*pow(csc(Th),2)*pow(r,3) - 
+                11493680*pow(MASS,6)*cot(Th)*pow(csc(Th),2)*pow(r,4) + 
+                2240080*pow(MASS,5)*cot(Th)*pow(csc(Th),2)*pow(r,5) + 
+                12923472*pow(MASS,4)*cot(Th)*pow(csc(Th),2)*pow(r,6) + 
+                193272*pow(MASS,3)*cot(Th)*pow(csc(Th),2)*pow(r,7) + 
+                1190784*pow(MASS,2)*cot(Th)*pow(csc(Th),2)*pow(r,8) - 
+                713034*MASS*cot(Th)*pow(csc(Th),2)*pow(r,9))*pow(sin(Th),2))/
+            (110250.*pow(r,9)*pow(-2*MASS + r,3)) - 
+           (pow(P_r,2)*(-899640000*pow(MASS,9)*cos(Th)*sin(Th) + 
+                1211868000*pow(MASS,8)*cos(Th)*r*sin(Th) - 
+                660185400*pow(MASS,7)*cos(Th)*pow(r,2)*sin(Th) + 
+                114011100*pow(MASS,6)*cos(Th)*pow(r,3)*sin(Th) - 
+                70121340*pow(MASS,5)*cos(Th)*pow(r,4)*sin(Th) + 
+                52914570*pow(MASS,4)*cos(Th)*pow(r,5)*sin(Th) + 
+                774756*pow(MASS,3)*cos(Th)*pow(r,6)*sin(Th) - 
+                463176*pow(MASS,2)*cos(Th)*pow(r,7)*sin(Th) - 
+                1124676*MASS*cos(Th)*pow(r,8)*sin(Th)))/(110250.*pow(r,11))))/
+       2.);
+
+    Ph_d = (JZ*pow(csc(Th),2))/pow(r,2) + 
+   SPIN*((-2*ENERGY*MASS)/((2*MASS - r)*pow(r,2)) - 
+      (ENERGY*ZETA*(-496*pow(MASS,7) + 96*pow(MASS,6)*r + 
+           70*pow(MASS,5)*pow(r,2) + 132*pow(MASS,4)*pow(r,3) + 
+           9*pow(MASS,3)*pow(r,4)))/(15.*pow(r,7)*pow(-2*MASS + r,2))) + 
+   pow(SPIN,2)*((JZ*(2*MASS - 2*MASS*pow(csc(Th),2) + pow(csc(Th),2)*r))/
+       ((2*MASS - r)*pow(r,4)) + 
+      (JZ*ZETA*(105840000*pow(MASS,10)*pow(cot(Th),2) - 
+           35280000*pow(MASS,10)*pow(csc(Th),2) + 11760000*pow(MASS,9)*r - 
+           180398400*pow(MASS,9)*pow(cot(Th),2)*r + 
+           60132800*pow(MASS,9)*pow(csc(Th),2)*r - 
+           17404800*pow(MASS,8)*pow(r,2) + 
+           60018000*pow(MASS,8)*pow(cot(Th),2)*pow(r,2) - 
+           20006000*pow(MASS,8)*pow(csc(Th),2)*pow(r,2) + 
+           882000*pow(MASS,7)*pow(r,3) + 
+           93000*pow(MASS,7)*pow(cot(Th),2)*pow(r,3) - 
+           31000*pow(MASS,7)*pow(csc(Th),2)*pow(r,3) - 
+           1764000*pow(MASS,6)*pow(r,4) + 
+           22663020*pow(MASS,6)*pow(cot(Th),2)*pow(r,4) - 
+           7554340*pow(MASS,6)*pow(csc(Th),2)*pow(r,4) + 
+           3733800*pow(MASS,5)*pow(r,5) - 
+           6603474*pow(MASS,5)*pow(cot(Th),2)*pow(r,5) + 
+           2201158*pow(MASS,5)*pow(csc(Th),2)*pow(r,5) + 
+           264600*pow(MASS,4)*pow(r,6) - 
+           1720986*pow(MASS,4)*pow(cot(Th),2)*pow(r,6) + 
+           573662*pow(MASS,4)*pow(csc(Th),2)*pow(r,6) - 
+           574929*pow(MASS,3)*pow(cot(Th),2)*pow(r,7) + 
+           191643*pow(MASS,3)*pow(csc(Th),2)*pow(r,7) - 
+           942732*pow(MASS,2)*pow(cot(Th),2)*pow(r,8) + 
+           314244*pow(MASS,2)*pow(csc(Th),2)*pow(r,8) + 
+           562338*MASS*pow(cot(Th),2)*pow(r,9) - 
+           187446*MASS*pow(csc(Th),2)*pow(r,9)))/
+       (110250.*pow(r,12)*pow(-2*MASS + r,2)));
+
+    P_Ph_d = 0;
+
     gsl_vector_set(out_state, 0, r_d);
     gsl_vector_set(out_state, 1, P_r_d);
     gsl_vector_set(out_state, 2, Th_d);
-    gsl_vector_set(out_state, 3, PTh_d);
+    gsl_vector_set(out_state, 3, P_Th_d);
     gsl_vector_set(out_state, 4, Ph_d);
     gsl_vector_set(out_state, 5, P_Ph_d); 
        
-	return 0;
-    }
-
-
-int edgb_o1SR(double t, gsl_vector * in_state, gsl_vector * out_state){
-
-double r, P_r, Th, PTh, Ph, P_Ph;
-
-r = gsl_vector_get(in_state, 0);
-P_r = gsl_vector_get(in_state, 1);
-Th = gsl_vector_get(in_state, 2);
-PTh = gsl_vector_get(in_state, 3);
-Ph = gsl_vector_get(in_state, 4);
-P_Ph = gsl_vector_get(in_state, 5);
-
-double r_d, P_r_d, Th_d, PTh_d, Ph_d, P_Ph_d;
-
-r_d = (220500*pow(MASS,4)*P_r*pow(r,9)*pow(-2*MASS + r,3))/
-   (-7350*pow(MASS,2)*(2*MASS - r)*pow(r,4)*
-      (1840*pow(MASS,5)*ZETA - 48*pow(MASS,4)*r*ZETA - 15*MASS*pow(r,4)*ZETA - 
-        15*pow(r,5)*ZETA - 30*pow(MASS,3)*pow(r,2)*(pow(r,4) + ZETA) + 
-        5*pow(MASS,2)*(3*pow(r,7) - 52*pow(r,3)*ZETA)) + 
-     pow(SPIN,2)*(-299880000*pow(MASS,10)*ZETA + 583296000*pow(MASS,9)*r*ZETA - 
-        310986200*pow(MASS,8)*pow(r,2)*ZETA + 55258000*pow(MASS,7)*pow(r,3)*ZETA - 
-        45095130*pow(MASS,6)*pow(r,4)*ZETA - 1018518*pow(MASS,3)*pow(r,7)*ZETA + 
-        327054*pow(MASS,2)*pow(r,8)*ZETA + 132321*MASS*pow(r,9)*ZETA + 
-        55125*pow(r,10)*ZETA - pow(MASS,4)*pow(r,6)*
-         (110250*pow(r,4) + 3428093*ZETA) + 
-        20*pow(MASS,5)*(11025*pow(r,9) + 1463804*pow(r,5)*ZETA)) + 
-     3*pow(SPIN,2)*MASS*(2*MASS - r)*(149940000*pow(MASS,8)*ZETA - 
-        201978000*pow(MASS,7)*r*ZETA + 101014900*pow(MASS,6)*pow(r,2)*ZETA - 
-        18766650*pow(MASS,5)*pow(r,3)*ZETA - 55626*pow(MASS,2)*pow(r,6)*ZETA + 
-        150696*MASS*pow(r,7)*ZETA + 187446*pow(r,8)*ZETA + 
-        30*pow(MASS,4)*(2450*pow(r,8) + 394463*pow(r,4)*ZETA) - 
-        5*pow(MASS,3)*(7350*pow(r,9) + 1509019*pow(r,5)*ZETA))*pow(cos(Th),2));
-Th_d = (2*PTh)/(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2) - 
-     (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-          3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-          887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-          435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*(1 + 3*cos(2*Th)))/
-      (220500.*pow(MASS,3)*pow(r,8)));
-Ph_d = (2*(JZ*(-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-          (ZETA*(7350*pow(MASS,2)*pow(r,4)*
-                (400*pow(MASS,4) - 96*pow(MASS,3)*r - 66*pow(MASS,2)*pow(r,2) - 
-                  130*MASS*pow(r,3) - 5*pow(r,4)) + 
-               pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                  2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                  2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                  355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                  205821*pow(r,8)) + 
-               3*pow(SPIN,2)*(8820000*pow(MASS,8) - 8173200*pow(MASS,7)*r - 
-                  15803900*pow(MASS,6)*pow(r,2) + 4198950*pow(MASS,5)*pow(r,3) + 
-                  4061710*pow(MASS,4)*pow(r,4) + 2275145*pow(MASS,3)*pow(r,5) - 
-                  164874*pow(MASS,2)*pow(r,6) - 187446*MASS*pow(r,7) - 
-                  187446*pow(r,8))*pow(cos(Th),2)))/
-           (110250.*pow(MASS,3)*pow(r,11))) - 
-       (SPIN*ENERGY*(400*pow(MASS,4)*ZETA - 144*pow(MASS,3)*r*ZETA - 140*MASS*pow(r,3)*ZETA - 
-            9*pow(r,4)*ZETA + 30*pow(MASS,2)*(pow(r,6) - 3*pow(r,2)*ZETA))*
-          pow(sin(Th),2))/(15.*MASS*pow(r,7))))/
-   (-(pow(SPIN,2)*pow(-400*pow(MASS,4)*ZETA + 144*pow(MASS,3)*r*ZETA + 
-           140*MASS*pow(r,3)*ZETA + 9*pow(r,4)*ZETA - 
-           30*pow(MASS,2)*(pow(r,6) - 3*pow(r,2)*ZETA),2)*pow(sin(Th),4))/
-      (225.*pow(MASS,2)*pow(r,14)) + 
-     (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-        (ZETA*(7350*pow(MASS,2)*pow(r,4)*
-              (400*pow(MASS,4) - 96*pow(MASS,3)*r - 66*pow(MASS,2)*pow(r,2) - 
-                130*MASS*pow(r,3) - 5*pow(r,4)) + 
-             pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 205821*pow(r,8))
-               + 3*pow(SPIN,2)*(8820000*pow(MASS,8) - 8173200*pow(MASS,7)*r - 
-                15803900*pow(MASS,6)*pow(r,2) + 4198950*pow(MASS,5)*pow(r,3) + 
-                4061710*pow(MASS,4)*pow(r,4) + 2275145*pow(MASS,3)*pow(r,5) - 
-                164874*pow(MASS,2)*pow(r,6) - 187446*MASS*pow(r,7) - 187446*pow(r,8))
-               *pow(cos(Th),2)))/(110250.*pow(MASS,3)*pow(r,11)))*
-      (pow(r,2)*pow(sin(Th),2) - 
-        (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-             3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-             887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-             435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*(1 + 3*cos(2*Th))*
-           pow(sin(Th),2))/(220500.*pow(MASS,3)*pow(r,8)) + 
-        pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)));
-P_r_d = (pow(PTh,2)*(2*r - (pow(SPIN,2)*(-6213200*pow(MASS,6) - 6833400*pow(MASS,5)*r - 
-             5566950*pow(MASS,4)*pow(r,2) + 3548440*pow(MASS,3)*pow(r,3) + 
-             4003665*pow(MASS,2)*pow(r,4) + 2613240*MASS*pow(r,5) + 1312122*pow(r,6))
-            *ZETA*(-1 + 3*pow(cos(Th),2)))/(110250.*pow(MASS,3)*pow(r,8)) + 
-        (4*pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-             3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-             887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-             435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*(-1 + 3*pow(cos(Th),2))
-           )/(55125.*pow(MASS,3)*pow(r,9))))/
-    pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2) - 
-      (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-           3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-           887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-           435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*(-1 + 3*pow(cos(Th),2)))/
-       (110250.*pow(MASS,3)*pow(r,8)),2) + 
-   (pow(P_r,2)*(-(r/pow(-2*MASS + r,2)) + 1/(-2*MASS + r) + 
-        (pow(SPIN,2)*(-1 + pow(cos(Th),2)))/(r*pow(-2*MASS + r,2)) - 
-        (2*pow(SPIN,2)*(-r - 2*MASS*pow(cos(Th),2) + r*pow(cos(Th),2)))/
-         (r*pow(-2*MASS + r,3)) - (pow(SPIN,2)*
-           (-r - 2*MASS*pow(cos(Th),2) + r*pow(cos(Th),2)))/
-         (pow(r,2)*pow(-2*MASS + r,2)) + 
-        ZETA*((-48*pow(MASS,4) - 60*pow(MASS,3)*r - 780*pow(MASS,2)*pow(r,2) - 
-              60*MASS*pow(r,3) - 75*pow(r,4))/
-            (15.*pow(MASS,2)*pow(2*MASS - r,2)*pow(r,5)) - 
-           (1840*pow(MASS,5) - 48*pow(MASS,4)*r - 30*pow(MASS,3)*pow(r,2) - 
-              260*pow(MASS,2)*pow(r,3) - 15*MASS*pow(r,4) - 15*pow(r,5))/
-            (3.*pow(MASS,2)*pow(2*MASS - r,2)*pow(r,6)) + 
-           (2*(1840*pow(MASS,5) - 48*pow(MASS,4)*r - 30*pow(MASS,3)*pow(r,2) - 
-                260*pow(MASS,2)*pow(r,3) - 15*MASS*pow(r,4) - 15*pow(r,5)))/
-            (15.*pow(MASS,2)*pow(2*MASS - r,3)*pow(r,5)) - 
-           (pow(SPIN,2)*(583296000*pow(MASS,9) - 621972400*pow(MASS,8)*r + 
-                165774000*pow(MASS,7)*pow(r,2) - 180380520*pow(MASS,6)*pow(r,3) + 
-                146380400*pow(MASS,5)*pow(r,4) - 20568558*pow(MASS,4)*pow(r,5) - 
-                7129626*pow(MASS,3)*pow(r,6) + 2616432*pow(MASS,2)*pow(r,7) + 
-                1190889*MASS*pow(r,8) + 551250*pow(r,9) - 
-                1661688000*pow(MASS,9)*pow(cos(Th),2) + 
-                2424046800*pow(MASS,8)*r*pow(cos(Th),2) - 
-                1246933800*pow(MASS,7)*pow(r,2)*pow(cos(Th),2) + 
-                509213160*pow(MASS,6)*pow(r,3)*pow(cos(Th),2) - 
-                403861200*pow(MASS,5)*pow(r,4)*pow(cos(Th),2) + 
-                133809174*pow(MASS,4)*pow(r,5)*pow(cos(Th),2) + 
-                7497378*pow(MASS,3)*pow(r,6)*pow(cos(Th),2) + 
-                5380704*pow(MASS,2)*pow(r,7)*pow(cos(Th),2) - 
-                5061042*MASS*pow(r,8)*pow(cos(Th),2)))/
-            (110250.*pow(MASS,4)*pow(2*MASS - r,3)*pow(r,9)) + 
-           (pow(SPIN,2)*(-299880000*pow(MASS,10) + 583296000*pow(MASS,9)*r - 
-                310986200*pow(MASS,8)*pow(r,2) + 55258000*pow(MASS,7)*pow(r,3) - 
-                45095130*pow(MASS,6)*pow(r,4) + 29276080*pow(MASS,5)*pow(r,5) - 
-                3428093*pow(MASS,4)*pow(r,6) - 1018518*pow(MASS,3)*pow(r,7) + 
-                327054*pow(MASS,2)*pow(r,8) + 132321*MASS*pow(r,9) + 
-                55125*pow(r,10) + 899640000*pow(MASS,10)*pow(cos(Th),2) - 
-                1661688000*pow(MASS,9)*r*pow(cos(Th),2) + 
-                1212023400*pow(MASS,8)*pow(r,2)*pow(cos(Th),2) - 
-                415644600*pow(MASS,7)*pow(r,3)*pow(cos(Th),2) + 
-                127303290*pow(MASS,6)*pow(r,4)*pow(cos(Th),2) - 
-                80772240*pow(MASS,5)*pow(r,5)*pow(cos(Th),2) + 
-                22301529*pow(MASS,4)*pow(r,6)*pow(cos(Th),2) + 
-                1071054*pow(MASS,3)*pow(r,7)*pow(cos(Th),2) + 
-                672588*pow(MASS,2)*pow(r,8)*pow(cos(Th),2) - 
-                562338*MASS*pow(r,9)*pow(cos(Th),2)))/
-            (12250.*pow(MASS,4)*pow(2*MASS - r,3)*pow(r,10)) - 
-           (pow(SPIN,2)*(-299880000*pow(MASS,10) + 583296000*pow(MASS,9)*r - 
-                310986200*pow(MASS,8)*pow(r,2) + 55258000*pow(MASS,7)*pow(r,3) - 
-                45095130*pow(MASS,6)*pow(r,4) + 29276080*pow(MASS,5)*pow(r,5) - 
-                3428093*pow(MASS,4)*pow(r,6) - 1018518*pow(MASS,3)*pow(r,7) + 
-                327054*pow(MASS,2)*pow(r,8) + 132321*MASS*pow(r,9) + 
-                55125*pow(r,10) + 899640000*pow(MASS,10)*pow(cos(Th),2) - 
-                1661688000*pow(MASS,9)*r*pow(cos(Th),2) + 
-                1212023400*pow(MASS,8)*pow(r,2)*pow(cos(Th),2) - 
-                415644600*pow(MASS,7)*pow(r,3)*pow(cos(Th),2) + 
-                127303290*pow(MASS,6)*pow(r,4)*pow(cos(Th),2) - 
-                80772240*pow(MASS,5)*pow(r,5)*pow(cos(Th),2) + 
-                22301529*pow(MASS,4)*pow(r,6)*pow(cos(Th),2) + 
-                1071054*pow(MASS,3)*pow(r,7)*pow(cos(Th),2) + 
-                672588*pow(MASS,2)*pow(r,8)*pow(cos(Th),2) - 
-                562338*MASS*pow(r,9)*pow(cos(Th),2)))/
-            (36750.*pow(MASS,4)*pow(2*MASS - r,4)*pow(r,9)))))/
-    pow(r/(-2*MASS + r) + (pow(SPIN,2)*
-         (-r - 2*MASS*pow(cos(Th),2) + r*pow(cos(Th),2)))/(r*pow(-2*MASS + r,2))\
-       + ZETA*((1840*pow(MASS,5) - 48*pow(MASS,4)*r - 30*pow(MASS,3)*pow(r,2) - 
-            260*pow(MASS,2)*pow(r,3) - 15*MASS*pow(r,4) - 15*pow(r,5))/
-          (15.*pow(MASS,2)*pow(2*MASS - r,2)*pow(r,5)) - 
-         (pow(SPIN,2)*(-299880000*pow(MASS,10) + 583296000*pow(MASS,9)*r - 
-              310986200*pow(MASS,8)*pow(r,2) + 55258000*pow(MASS,7)*pow(r,3) - 
-              45095130*pow(MASS,6)*pow(r,4) + 29276080*pow(MASS,5)*pow(r,5) - 
-              3428093*pow(MASS,4)*pow(r,6) - 1018518*pow(MASS,3)*pow(r,7) + 
-              327054*pow(MASS,2)*pow(r,8) + 132321*MASS*pow(r,9) + 55125*pow(r,10) + 
-              899640000*pow(MASS,10)*pow(cos(Th),2) - 
-              1661688000*pow(MASS,9)*r*pow(cos(Th),2) + 
-              1212023400*pow(MASS,8)*pow(r,2)*pow(cos(Th),2) - 
-              415644600*pow(MASS,7)*pow(r,3)*pow(cos(Th),2) + 
-              127303290*pow(MASS,6)*pow(r,4)*pow(cos(Th),2) - 
-              80772240*pow(MASS,5)*pow(r,5)*pow(cos(Th),2) + 
-              22301529*pow(MASS,4)*pow(r,6)*pow(cos(Th),2) + 
-              1071054*pow(MASS,3)*pow(r,7)*pow(cos(Th),2) + 
-              672588*pow(MASS,2)*pow(r,8)*pow(cos(Th),2) - 
-              562338*MASS*pow(r,9)*pow(cos(Th),2)))/
-          (110250.*pow(MASS,4)*pow(2*MASS - r,3)*pow(r,9))),2) - 
-   JZ*(-((JZ*(-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-             ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-                (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                     2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                     2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                     355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                     205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                     24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                     47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                     12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                     12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                     6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                     494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                     562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                     562338*pow(r,8)*pow(cos(Th),2)))/
-                 (110250.*pow(MASS,3)*pow(r,11))))*
-           (-2*((2*SPIN*MASS*pow(sin(Th),2))/pow(r,2) + 
-                (SPIN*(144*pow(MASS,3) + 180*pow(MASS,2)*r + 420*MASS*pow(r,2) + 
-                     36*pow(r,3))*ZETA*pow(sin(Th),2))/(15.*MASS*pow(r,7)) - 
-                (7*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                     140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-                 (15.*MASS*pow(r,8)))*
-              ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-                (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                     140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-                 (15.*MASS*pow(r,7))) + 
-             (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-                ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                   (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                   26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                   (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                        2005500*pow(MASS,6)*pow(r,2) - 
-                        1538250*pow(MASS,5)*pow(r,3) - 
-                        2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                        355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                        205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                        24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                        47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                        12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                        12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                        6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                        494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                        562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                        562338*pow(r,8)*pow(cos(Th),2)))/
-                    (110250.*pow(MASS,3)*pow(r,11))))*
-              (2*r*pow(sin(Th),2) - 
-                (pow(SPIN,2)*(-6213200*pow(MASS,6) - 6833400*pow(MASS,5)*r - 
-                     5566950*pow(MASS,4)*pow(r,2) + 3548440*pow(MASS,3)*pow(r,3) + 
-                     4003665*pow(MASS,2)*pow(r,4) + 2613240*MASS*pow(r,5) + 
-                     1312122*pow(r,6))*ZETA*(-1 + 3*pow(cos(Th),2))*
-                   pow(sin(Th),2))/(110250.*pow(MASS,3)*pow(r,8)) + 
-                (4*pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                     3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                     887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                     435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                   (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-                 (55125.*pow(MASS,3)*pow(r,9)) - 
-                (2*pow(SPIN,2)*MASS*pow(sin(Th),4))/pow(r,2)) + 
-             ((-2*MASS)/pow(r,2) + (6*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,4) + 
-                ZETA*((-560*pow(MASS,3))/(3.*pow(r,8)) + 
-                   (192*pow(MASS,2))/(5.*pow(r,7)) + (22*MASS)/pow(r,6) + 
-                   104/(3.*pow(r,5)) + 1/(MASS*pow(r,4)) + 
-                   (pow(SPIN,2)*(9153200*pow(MASS,7) + 4011000*pow(MASS,6)*r - 
-                        4614750*pow(MASS,5)*pow(r,2) - 
-                        11248840*pow(MASS,4)*pow(r,3) - 
-                        3939975*pow(MASS,3)*pow(r,4) + 
-                        2135844*pow(MASS,2)*pow(r,5) + 3112872*MASS*pow(r,6) + 
-                        1646568*pow(r,7) - 24519600*pow(MASS,7)*pow(cos(Th),2) - 
-                        94823400*pow(MASS,6)*r*pow(cos(Th),2) + 
-                        37790550*pow(MASS,5)*pow(r,2)*pow(cos(Th),2) + 
-                        48740520*pow(MASS,4)*pow(r,3)*pow(cos(Th),2) + 
-                        34127175*pow(MASS,3)*pow(r,4)*pow(cos(Th),2) - 
-                        2967732*pow(MASS,2)*pow(r,5)*pow(cos(Th),2) - 
-                        3936366*MASS*pow(r,6)*pow(cos(Th),2) - 
-                        4498704*pow(r,7)*pow(cos(Th),2)))/
-                    (110250.*pow(MASS,3)*pow(r,11)) - 
-                   (11*pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                        2005500*pow(MASS,6)*pow(r,2) - 
-                        1538250*pow(MASS,5)*pow(r,3) - 
-                        2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                        355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                        205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                        24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                        47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                        12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                        12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                        6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                        494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                        562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                        562338*pow(r,8)*pow(cos(Th),2)))/
-                    (110250.*pow(MASS,3)*pow(r,12))))*
-              (pow(r,2)*pow(sin(Th),2) - 
-                (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                     3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                     887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                     435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                   (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-                 (110250.*pow(MASS,3)*pow(r,8)) + 
-                pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-         pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7)),2) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2)) - 
-      (ENERGY*((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-           (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-            (15.*MASS*pow(r,7)))*(-2*
-            ((2*SPIN*MASS*pow(sin(Th),2))/pow(r,2) + 
-              (SPIN*(144*pow(MASS,3) + 180*pow(MASS,2)*r + 420*MASS*pow(r,2) + 
-                   36*pow(r,3))*ZETA*pow(sin(Th),2))/(15.*MASS*pow(r,7)) - 
-              (7*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,8)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*r*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(-6213200*pow(MASS,6) - 6833400*pow(MASS,5)*r - 
-                   5566950*pow(MASS,4)*pow(r,2) + 3548440*pow(MASS,3)*pow(r,3) + 
-                   4003665*pow(MASS,2)*pow(r,4) + 2613240*MASS*pow(r,5) + 
-                   1312122*pow(r,6))*ZETA*(-1 + 3*pow(cos(Th),2))*
-                 pow(sin(Th),2))/(110250.*pow(MASS,3)*pow(r,8)) + 
-              (4*pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (55125.*pow(MASS,3)*pow(r,9)) - 
-              (2*pow(SPIN,2)*MASS*pow(sin(Th),4))/pow(r,2)) + 
-           ((-2*MASS)/pow(r,2) + (6*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,4) + 
-              ZETA*((-560*pow(MASS,3))/(3.*pow(r,8)) + 
-                 (192*pow(MASS,2))/(5.*pow(r,7)) + (22*MASS)/pow(r,6) + 
-                 104/(3.*pow(r,5)) + 1/(MASS*pow(r,4)) + 
-                 (pow(SPIN,2)*(9153200*pow(MASS,7) + 4011000*pow(MASS,6)*r - 
-                      4614750*pow(MASS,5)*pow(r,2) - 11248840*pow(MASS,4)*pow(r,3) - 
-                      3939975*pow(MASS,3)*pow(r,4) + 2135844*pow(MASS,2)*pow(r,5) + 
-                      3112872*MASS*pow(r,6) + 1646568*pow(r,7) - 
-                      24519600*pow(MASS,7)*pow(cos(Th),2) - 
-                      94823400*pow(MASS,6)*r*pow(cos(Th),2) + 
-                      37790550*pow(MASS,5)*pow(r,2)*pow(cos(Th),2) + 
-                      48740520*pow(MASS,4)*pow(r,3)*pow(cos(Th),2) + 
-                      34127175*pow(MASS,3)*pow(r,4)*pow(cos(Th),2) - 
-                      2967732*pow(MASS,2)*pow(r,5)*pow(cos(Th),2) - 
-                      3936366*MASS*pow(r,6)*pow(cos(Th),2) - 
-                      4498704*pow(r,7)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11)) - 
-                 (11*pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,12))))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2) + 
-      (JZ*((-2*MASS)/pow(r,2) + (6*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,4) + 
-           ZETA*((-560*pow(MASS,3))/(3.*pow(r,8)) + 
-              (192*pow(MASS,2))/(5.*pow(r,7)) + (22*MASS)/pow(r,6) + 
-              104/(3.*pow(r,5)) + 1/(MASS*pow(r,4)) + 
-              (pow(SPIN,2)*(9153200*pow(MASS,7) + 4011000*pow(MASS,6)*r - 
-                   4614750*pow(MASS,5)*pow(r,2) - 11248840*pow(MASS,4)*pow(r,3) - 
-                   3939975*pow(MASS,3)*pow(r,4) + 2135844*pow(MASS,2)*pow(r,5) + 
-                   3112872*MASS*pow(r,6) + 1646568*pow(r,7) - 
-                   24519600*pow(MASS,7)*pow(cos(Th),2) - 
-                   94823400*pow(MASS,6)*r*pow(cos(Th),2) + 
-                   37790550*pow(MASS,5)*pow(r,2)*pow(cos(Th),2) + 
-                   48740520*pow(MASS,4)*pow(r,3)*pow(cos(Th),2) + 
-                   34127175*pow(MASS,3)*pow(r,4)*pow(cos(Th),2) - 
-                   2967732*pow(MASS,2)*pow(r,5)*pow(cos(Th),2) - 
-                   3936366*MASS*pow(r,6)*pow(cos(Th),2) - 
-                   4498704*pow(r,7)*pow(cos(Th),2)))/
-               (110250.*pow(MASS,3)*pow(r,11)) - 
-              (11*pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                   2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                   2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                   355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                   205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                   24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                   47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                   12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                   12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                   6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                   494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                   562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                   562338*pow(r,8)*pow(cos(Th),2)))/
-               (110250.*pow(MASS,3)*pow(r,12)))))/
-       (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))) + 
-      (ENERGY*((2*SPIN*MASS*pow(sin(Th),2))/pow(r,2) + 
-           (SPIN*(144*pow(MASS,3) + 180*pow(MASS,2)*r + 420*MASS*pow(r,2) + 36*pow(r,3))*
-              ZETA*pow(sin(Th),2))/(15.*MASS*pow(r,7)) - 
-           (7*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-            (15.*MASS*pow(r,8))))/
-       (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)))) + 
-   ENERGY*((JZ*((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-           (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-            (15.*MASS*pow(r,7)))*(-2*
-            ((2*SPIN*MASS*pow(sin(Th),2))/pow(r,2) + 
-              (SPIN*(144*pow(MASS,3) + 180*pow(MASS,2)*r + 420*MASS*pow(r,2) + 
-                   36*pow(r,3))*ZETA*pow(sin(Th),2))/(15.*MASS*pow(r,7)) - 
-              (7*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,8)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*r*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(-6213200*pow(MASS,6) - 6833400*pow(MASS,5)*r - 
-                   5566950*pow(MASS,4)*pow(r,2) + 3548440*pow(MASS,3)*pow(r,3) + 
-                   4003665*pow(MASS,2)*pow(r,4) + 2613240*MASS*pow(r,5) + 
-                   1312122*pow(r,6))*ZETA*(-1 + 3*pow(cos(Th),2))*
-                 pow(sin(Th),2))/(110250.*pow(MASS,3)*pow(r,8)) + 
-              (4*pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (55125.*pow(MASS,3)*pow(r,9)) - 
-              (2*pow(SPIN,2)*MASS*pow(sin(Th),4))/pow(r,2)) + 
-           ((-2*MASS)/pow(r,2) + (6*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,4) + 
-              ZETA*((-560*pow(MASS,3))/(3.*pow(r,8)) + 
-                 (192*pow(MASS,2))/(5.*pow(r,7)) + (22*MASS)/pow(r,6) + 
-                 104/(3.*pow(r,5)) + 1/(MASS*pow(r,4)) + 
-                 (pow(SPIN,2)*(9153200*pow(MASS,7) + 4011000*pow(MASS,6)*r - 
-                      4614750*pow(MASS,5)*pow(r,2) - 11248840*pow(MASS,4)*pow(r,3) - 
-                      3939975*pow(MASS,3)*pow(r,4) + 2135844*pow(MASS,2)*pow(r,5) + 
-                      3112872*MASS*pow(r,6) + 1646568*pow(r,7) - 
-                      24519600*pow(MASS,7)*pow(cos(Th),2) - 
-                      94823400*pow(MASS,6)*r*pow(cos(Th),2) + 
-                      37790550*pow(MASS,5)*pow(r,2)*pow(cos(Th),2) + 
-                      48740520*pow(MASS,4)*pow(r,3)*pow(cos(Th),2) + 
-                      34127175*pow(MASS,3)*pow(r,4)*pow(cos(Th),2) - 
-                      2967732*pow(MASS,2)*pow(r,5)*pow(cos(Th),2) - 
-                      3936366*MASS*pow(r,6)*pow(cos(Th),2) - 
-                      4498704*pow(r,7)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11)) - 
-                 (11*pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,12))))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2) + 
-      (ENERGY*(pow(r,2)*pow(sin(Th),2) - 
-           (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-              (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-            (110250.*pow(MASS,3)*pow(r,8)) + 
-           pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))*
-         (-2*((2*SPIN*MASS*pow(sin(Th),2))/pow(r,2) + 
-              (SPIN*(144*pow(MASS,3) + 180*pow(MASS,2)*r + 420*MASS*pow(r,2) + 
-                   36*pow(r,3))*ZETA*pow(sin(Th),2))/(15.*MASS*pow(r,7)) - 
-              (7*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,8)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*r*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(-6213200*pow(MASS,6) - 6833400*pow(MASS,5)*r - 
-                   5566950*pow(MASS,4)*pow(r,2) + 3548440*pow(MASS,3)*pow(r,3) + 
-                   4003665*pow(MASS,2)*pow(r,4) + 2613240*MASS*pow(r,5) + 
-                   1312122*pow(r,6))*ZETA*(-1 + 3*pow(cos(Th),2))*
-                 pow(sin(Th),2))/(110250.*pow(MASS,3)*pow(r,8)) + 
-              (4*pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (55125.*pow(MASS,3)*pow(r,9)) - 
-              (2*pow(SPIN,2)*MASS*pow(sin(Th),4))/pow(r,2)) + 
-           ((-2*MASS)/pow(r,2) + (6*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,4) + 
-              ZETA*((-560*pow(MASS,3))/(3.*pow(r,8)) + 
-                 (192*pow(MASS,2))/(5.*pow(r,7)) + (22*MASS)/pow(r,6) + 
-                 104/(3.*pow(r,5)) + 1/(MASS*pow(r,4)) + 
-                 (pow(SPIN,2)*(9153200*pow(MASS,7) + 4011000*pow(MASS,6)*r - 
-                      4614750*pow(MASS,5)*pow(r,2) - 11248840*pow(MASS,4)*pow(r,3) - 
-                      3939975*pow(MASS,3)*pow(r,4) + 2135844*pow(MASS,2)*pow(r,5) + 
-                      3112872*MASS*pow(r,6) + 1646568*pow(r,7) - 
-                      24519600*pow(MASS,7)*pow(cos(Th),2) - 
-                      94823400*pow(MASS,6)*r*pow(cos(Th),2) + 
-                      37790550*pow(MASS,5)*pow(r,2)*pow(cos(Th),2) + 
-                      48740520*pow(MASS,4)*pow(r,3)*pow(cos(Th),2) + 
-                      34127175*pow(MASS,3)*pow(r,4)*pow(cos(Th),2) - 
-                      2967732*pow(MASS,2)*pow(r,5)*pow(cos(Th),2) - 
-                      3936366*MASS*pow(r,6)*pow(cos(Th),2) - 
-                      4498704*pow(r,7)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11)) - 
-                 (11*pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,12))))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2) - 
-      (JZ*((2*SPIN*MASS*pow(sin(Th),2))/pow(r,2) + 
-           (SPIN*(144*pow(MASS,3) + 180*pow(MASS,2)*r + 420*MASS*pow(r,2) + 36*pow(r,3))*
-              ZETA*pow(sin(Th),2))/(15.*MASS*pow(r,7)) - 
-           (7*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-            (15.*MASS*pow(r,8))))/
-       (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))) - 
-      (ENERGY*(2*r*pow(sin(Th),2) - 
-           (pow(SPIN,2)*(-6213200*pow(MASS,6) - 6833400*pow(MASS,5)*r - 
-                5566950*pow(MASS,4)*pow(r,2) + 3548440*pow(MASS,3)*pow(r,3) + 
-                4003665*pow(MASS,2)*pow(r,4) + 2613240*MASS*pow(r,5) + 
-                1312122*pow(r,6))*ZETA*(-1 + 3*pow(cos(Th),2))*
-              pow(sin(Th),2))/(110250.*pow(MASS,3)*pow(r,8)) + 
-           (4*pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-              (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-            (55125.*pow(MASS,3)*pow(r,9)) - 
-           (2*pow(SPIN,2)*MASS*pow(sin(Th),4))/pow(r,2)))/
-       (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))));
-PTh_d = (pow(PTh,2)*(-2*pow(SPIN,2)*cos(Th)*sin(Th) + 
-        (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-             3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-             887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-             435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*sin(Th))/
-         (18375.*pow(MASS,3)*pow(r,8))))/
-    pow(pow(r,2) + pow(SPIN,2)*pow(cos(Th),2) - 
-      (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-           3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-           887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-           435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*(-1 + 3*pow(cos(Th),2)))/
-       (110250.*pow(MASS,3)*pow(r,8)),2) + 
-   (pow(P_r,2)*((pow(SPIN,2)*(4*MASS*cos(Th)*sin(Th) - 2*r*cos(Th)*sin(Th)))/
-         (r*pow(-2*MASS + r,2)) - (pow(SPIN,2)*ZETA*
-           (-1799280000*pow(MASS,10)*cos(Th)*sin(Th) + 
-             3323376000*pow(MASS,9)*r*cos(Th)*sin(Th) - 
-             2424046800*pow(MASS,8)*pow(r,2)*cos(Th)*sin(Th) + 
-             831289200*pow(MASS,7)*pow(r,3)*cos(Th)*sin(Th) - 
-             254606580*pow(MASS,6)*pow(r,4)*cos(Th)*sin(Th) + 
-             161544480*pow(MASS,5)*pow(r,5)*cos(Th)*sin(Th) - 
-             44603058*pow(MASS,4)*pow(r,6)*cos(Th)*sin(Th) - 
-             2142108*pow(MASS,3)*pow(r,7)*cos(Th)*sin(Th) - 
-             1345176*pow(MASS,2)*pow(r,8)*cos(Th)*sin(Th) + 
-             1124676*MASS*pow(r,9)*cos(Th)*sin(Th)))/
-         (110250.*pow(MASS,4)*pow(2*MASS - r,3)*pow(r,9))))/
-    pow(r/(-2*MASS + r) + (pow(SPIN,2)*(-r - 2*MASS*pow(cos(Th),2) + r*pow(cos(Th),2)))/
-       (r*pow(-2*MASS + r,2)) + ZETA*
-       ((1840*pow(MASS,5) - 48*pow(MASS,4)*r - 30*pow(MASS,3)*pow(r,2) - 
-            260*pow(MASS,2)*pow(r,3) - 15*MASS*pow(r,4) - 15*pow(r,5))/
-          (15.*pow(MASS,2)*pow(2*MASS - r,2)*pow(r,5)) - 
-         (pow(SPIN,2)*(-299880000*pow(MASS,10) + 583296000*pow(MASS,9)*r - 
-              310986200*pow(MASS,8)*pow(r,2) + 55258000*pow(MASS,7)*pow(r,3) - 
-              45095130*pow(MASS,6)*pow(r,4) + 29276080*pow(MASS,5)*pow(r,5) - 
-              3428093*pow(MASS,4)*pow(r,6) - 1018518*pow(MASS,3)*pow(r,7) + 
-              327054*pow(MASS,2)*pow(r,8) + 132321*MASS*pow(r,9) + 55125*pow(r,10) + 
-              899640000*pow(MASS,10)*pow(cos(Th),2) - 
-              1661688000*pow(MASS,9)*r*pow(cos(Th),2) + 
-              1212023400*pow(MASS,8)*pow(r,2)*pow(cos(Th),2) - 
-              415644600*pow(MASS,7)*pow(r,3)*pow(cos(Th),2) + 
-              127303290*pow(MASS,6)*pow(r,4)*pow(cos(Th),2) - 
-              80772240*pow(MASS,5)*pow(r,5)*pow(cos(Th),2) + 
-              22301529*pow(MASS,4)*pow(r,6)*pow(cos(Th),2) + 
-              1071054*pow(MASS,3)*pow(r,7)*pow(cos(Th),2) + 
-              672588*pow(MASS,2)*pow(r,8)*pow(cos(Th),2) - 
-              562338*MASS*pow(r,9)*pow(cos(Th),2)))/
-          (110250.*pow(MASS,4)*pow(2*MASS - r,3)*pow(r,9))),2) - 
-   JZ*((ENERGY*((-4*SPIN*MASS*cos(Th)*sin(Th))/r + 
-           (2*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*cos(Th)*sin(Th))/
-            (15.*MASS*pow(r,7))))/
-       (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))) + 
-      (JZ*((4*pow(SPIN,2)*MASS*cos(Th)*sin(Th))/pow(r,3) + 
-           (pow(SPIN,2)*ZETA*(-52920000*pow(MASS,8)*cos(Th)*sin(Th) + 
-                49039200*pow(MASS,7)*r*cos(Th)*sin(Th) + 
-                94823400*pow(MASS,6)*pow(r,2)*cos(Th)*sin(Th) - 
-                25193700*pow(MASS,5)*pow(r,3)*cos(Th)*sin(Th) - 
-                24370260*pow(MASS,4)*pow(r,4)*cos(Th)*sin(Th) - 
-                13650870*pow(MASS,3)*pow(r,5)*cos(Th)*sin(Th) + 
-                989244*pow(MASS,2)*pow(r,6)*cos(Th)*sin(Th) + 
-                1124676*MASS*pow(r,7)*cos(Th)*sin(Th) + 
-                1124676*pow(r,8)*cos(Th)*sin(Th)))/(110250.*pow(MASS,3)*pow(r,11))))
-        /(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))) - 
-      (JZ*(-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-           ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-              (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-              (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                   2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                   2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                   355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                   205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                   24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                   47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                   12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                   12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                   6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                   494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                   562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                   562338*pow(r,8)*pow(cos(Th),2)))/
-               (110250.*pow(MASS,3)*pow(r,11))))*
-         (-2*((-4*SPIN*MASS*cos(Th)*sin(Th))/r + 
-              (2*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*cos(Th)*sin(Th))/
-               (15.*MASS*pow(r,7)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*pow(r,2)*cos(Th)*sin(Th) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 (-1 + 3*pow(cos(Th),2))*sin(Th))/(55125.*pow(MASS,3)*pow(r,8)) + 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 pow(sin(Th),3))/(18375.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(2*cos(Th)*sin(Th) + (8*MASS*cos(Th)*pow(sin(Th),3))/r)) + 
-           ((4*pow(SPIN,2)*MASS*cos(Th)*sin(Th))/pow(r,3) + 
-              (pow(SPIN,2)*ZETA*(-52920000*pow(MASS,8)*cos(Th)*sin(Th) + 
-                   49039200*pow(MASS,7)*r*cos(Th)*sin(Th) + 
-                   94823400*pow(MASS,6)*pow(r,2)*cos(Th)*sin(Th) - 
-                   25193700*pow(MASS,5)*pow(r,3)*cos(Th)*sin(Th) - 
-                   24370260*pow(MASS,4)*pow(r,4)*cos(Th)*sin(Th) - 
-                   13650870*pow(MASS,3)*pow(r,5)*cos(Th)*sin(Th) + 
-                   989244*pow(MASS,2)*pow(r,6)*cos(Th)*sin(Th) + 
-                   1124676*MASS*pow(r,7)*cos(Th)*sin(Th) + 
-                   1124676*pow(r,8)*cos(Th)*sin(Th)))/
-               (110250.*pow(MASS,3)*pow(r,11)))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2) - 
-      (ENERGY*((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-           (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-            (15.*MASS*pow(r,7)))*(-2*
-            ((-4*SPIN*MASS*cos(Th)*sin(Th))/r + 
-              (2*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*cos(Th)*sin(Th))/
-               (15.*MASS*pow(r,7)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*pow(r,2)*cos(Th)*sin(Th) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 (-1 + 3*pow(cos(Th),2))*sin(Th))/(55125.*pow(MASS,3)*pow(r,8)) + 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 pow(sin(Th),3))/(18375.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(2*cos(Th)*sin(Th) + (8*MASS*cos(Th)*pow(sin(Th),3))/r)) + 
-           ((4*pow(SPIN,2)*MASS*cos(Th)*sin(Th))/pow(r,3) + 
-              (pow(SPIN,2)*ZETA*(-52920000*pow(MASS,8)*cos(Th)*sin(Th) + 
-                   49039200*pow(MASS,7)*r*cos(Th)*sin(Th) + 
-                   94823400*pow(MASS,6)*pow(r,2)*cos(Th)*sin(Th) - 
-                   25193700*pow(MASS,5)*pow(r,3)*cos(Th)*sin(Th) - 
-                   24370260*pow(MASS,4)*pow(r,4)*cos(Th)*sin(Th) - 
-                   13650870*pow(MASS,3)*pow(r,5)*cos(Th)*sin(Th) + 
-                   989244*pow(MASS,2)*pow(r,6)*cos(Th)*sin(Th) + 
-                   1124676*MASS*pow(r,7)*cos(Th)*sin(Th) + 
-                   1124676*pow(r,8)*cos(Th)*sin(Th)))/
-               (110250.*pow(MASS,3)*pow(r,11)))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2)) + 
-   ENERGY*(-((JZ*((-4*SPIN*MASS*cos(Th)*sin(Th))/r + 
-             (2*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                  140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*cos(Th)*sin(Th))/
-              (15.*MASS*pow(r,7))))/
-         (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7)),2) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)))) - 
-      (ENERGY*(2*pow(r,2)*cos(Th)*sin(Th) - 
-           (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-              (-1 + 3*pow(cos(Th),2))*sin(Th))/(55125.*pow(MASS,3)*pow(r,8)) + 
-           (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*pow(sin(Th),3))
-             /(18375.*pow(MASS,3)*pow(r,8)) + 
-           pow(SPIN,2)*(2*cos(Th)*sin(Th) + (8*MASS*cos(Th)*pow(sin(Th),3))/r)))/
-       (-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))) + 
-      (JZ*((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-           (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-            (15.*MASS*pow(r,7)))*(-2*
-            ((-4*SPIN*MASS*cos(Th)*sin(Th))/r + 
-              (2*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*cos(Th)*sin(Th))/
-               (15.*MASS*pow(r,7)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*pow(r,2)*cos(Th)*sin(Th) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 (-1 + 3*pow(cos(Th),2))*sin(Th))/(55125.*pow(MASS,3)*pow(r,8)) + 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 pow(sin(Th),3))/(18375.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(2*cos(Th)*sin(Th) + (8*MASS*cos(Th)*pow(sin(Th),3))/r)) + 
-           ((4*pow(SPIN,2)*MASS*cos(Th)*sin(Th))/pow(r,3) + 
-              (pow(SPIN,2)*ZETA*(-52920000*pow(MASS,8)*cos(Th)*sin(Th) + 
-                   49039200*pow(MASS,7)*r*cos(Th)*sin(Th) + 
-                   94823400*pow(MASS,6)*pow(r,2)*cos(Th)*sin(Th) - 
-                   25193700*pow(MASS,5)*pow(r,3)*cos(Th)*sin(Th) - 
-                   24370260*pow(MASS,4)*pow(r,4)*cos(Th)*sin(Th) - 
-                   13650870*pow(MASS,3)*pow(r,5)*cos(Th)*sin(Th) + 
-                   989244*pow(MASS,2)*pow(r,6)*cos(Th)*sin(Th) + 
-                   1124676*MASS*pow(r,7)*cos(Th)*sin(Th) + 
-                   1124676*pow(r,8)*cos(Th)*sin(Th)))/
-               (110250.*pow(MASS,3)*pow(r,11)))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2) + 
-      (ENERGY*(pow(r,2)*pow(sin(Th),2) - 
-           (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-              (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-            (110250.*pow(MASS,3)*pow(r,8)) + 
-           pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))*
-         (-2*((-4*SPIN*MASS*cos(Th)*sin(Th))/r + 
-              (2*SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*cos(Th)*sin(Th))/
-               (15.*MASS*pow(r,7)))*
-            ((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-              (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                   140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-               (15.*MASS*pow(r,7))) + 
-           (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-              ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - 
-                 (32*pow(MASS,2))/(5.*pow(r,6)) - (22*MASS)/(5.*pow(r,5)) - 
-                 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-                 (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                      2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                      2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                      355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                      205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                      24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                      47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                      12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                      12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                      6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                      494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                      562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                      562338*pow(r,8)*pow(cos(Th),2)))/
-                  (110250.*pow(MASS,3)*pow(r,11))))*
-            (2*pow(r,2)*cos(Th)*sin(Th) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 (-1 + 3*pow(cos(Th),2))*sin(Th))/(55125.*pow(MASS,3)*pow(r,8)) + 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*cos(Th)*
-                 pow(sin(Th),3))/(18375.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(2*cos(Th)*sin(Th) + (8*MASS*cos(Th)*pow(sin(Th),3))/r)) + 
-           ((4*pow(SPIN,2)*MASS*cos(Th)*sin(Th))/pow(r,3) + 
-              (pow(SPIN,2)*ZETA*(-52920000*pow(MASS,8)*cos(Th)*sin(Th) + 
-                   49039200*pow(MASS,7)*r*cos(Th)*sin(Th) + 
-                   94823400*pow(MASS,6)*pow(r,2)*cos(Th)*sin(Th) - 
-                   25193700*pow(MASS,5)*pow(r,3)*cos(Th)*sin(Th) - 
-                   24370260*pow(MASS,4)*pow(r,4)*cos(Th)*sin(Th) - 
-                   13650870*pow(MASS,3)*pow(r,5)*cos(Th)*sin(Th) + 
-                   989244*pow(MASS,2)*pow(r,6)*cos(Th)*sin(Th) + 
-                   1124676*MASS*pow(r,7)*cos(Th)*sin(Th) + 
-                   1124676*pow(r,8)*cos(Th)*sin(Th)))/
-               (110250.*pow(MASS,3)*pow(r,11)))*
-            (pow(r,2)*pow(sin(Th),2) - 
-              (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                   3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                   887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                   435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-                 (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-               (110250.*pow(MASS,3)*pow(r,8)) + 
-              pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r))))/
-       pow(-pow((-2*SPIN*MASS*pow(sin(Th),2))/r + 
-            (SPIN*(-400*pow(MASS,4) + 144*pow(MASS,3)*r + 90*pow(MASS,2)*pow(r,2) + 
-                 140*MASS*pow(r,3) + 9*pow(r,4))*ZETA*pow(sin(Th),2))/
-             (15.*MASS*pow(r,7)),2) + 
-         (-1 + (2*MASS)/r - (2*pow(SPIN,2)*MASS*pow(cos(Th),2))/pow(r,3) + 
-            ZETA*((80*pow(MASS,3))/(3.*pow(r,7)) - (32*pow(MASS,2))/(5.*pow(r,6)) - 
-               (22*MASS)/(5.*pow(r,5)) - 26/(3.*pow(r,4)) - 1/(3.*MASS*pow(r,3)) + 
-               (pow(SPIN,2)*(-8820000*pow(MASS,8) + 9153200*pow(MASS,7)*r + 
-                    2005500*pow(MASS,6)*pow(r,2) - 1538250*pow(MASS,5)*pow(r,3) - 
-                    2812210*pow(MASS,4)*pow(r,4) - 787995*pow(MASS,3)*pow(r,5) + 
-                    355974*pow(MASS,2)*pow(r,6) + 444696*MASS*pow(r,7) + 
-                    205821*pow(r,8) + 26460000*pow(MASS,8)*pow(cos(Th),2) - 
-                    24519600*pow(MASS,7)*r*pow(cos(Th),2) - 
-                    47411700*pow(MASS,6)*pow(r,2)*pow(cos(Th),2) + 
-                    12596850*pow(MASS,5)*pow(r,3)*pow(cos(Th),2) + 
-                    12185130*pow(MASS,4)*pow(r,4)*pow(cos(Th),2) + 
-                    6825435*pow(MASS,3)*pow(r,5)*pow(cos(Th),2) - 
-                    494622*pow(MASS,2)*pow(r,6)*pow(cos(Th),2) - 
-                    562338*MASS*pow(r,7)*pow(cos(Th),2) - 
-                    562338*pow(r,8)*pow(cos(Th),2)))/
-                (110250.*pow(MASS,3)*pow(r,11))))*
-          (pow(r,2)*pow(sin(Th),2) - 
-            (pow(SPIN,2)*(8820000*pow(MASS,7) - 6213200*pow(MASS,6)*r - 
-                 3416700*pow(MASS,5)*pow(r,2) - 1855650*pow(MASS,4)*pow(r,3) + 
-                 887110*pow(MASS,3)*pow(r,4) + 800733*pow(MASS,2)*pow(r,5) + 
-                 435540*MASS*pow(r,6) + 187446*pow(r,7))*ZETA*
-               (-1 + 3*pow(cos(Th),2))*pow(sin(Th),2))/
-             (110250.*pow(MASS,3)*pow(r,8)) + 
-            pow(SPIN,2)*(pow(sin(Th),2) + (2*MASS*pow(sin(Th),4))/r)),2));
-P_Ph_d = 0;
-
-gsl_vector_set(out_state, 0, r_d/2);
-gsl_vector_set(out_state, 1, P_r_d/2);
-gsl_vector_set(out_state, 2, Th_d/2);
-gsl_vector_set(out_state, 3, PTh_d/2);
-gsl_vector_set(out_state, 4, Ph_d/2);
-gsl_vector_set(out_state, 5, P_Ph_d/2);
 return 0;
 }
-
